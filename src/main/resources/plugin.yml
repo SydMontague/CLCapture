@@ -1,0 +1,14 @@
+name: CLCapture
+main: de.craftlancer.clcapture.CLCapture
+api-version: 1.14
+depend: [CLCore]
+soft-depend: [CLClans]
+loadbefore: [FactionMobs]
+version: ${project.version}
+permissions:
+  clcapture.admin:
+    default: op
+    description: "Allows to create and destroy capture points."
+commands:
+  capture:
+    description: CLCapture commands
