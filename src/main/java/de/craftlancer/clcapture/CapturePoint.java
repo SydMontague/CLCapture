@@ -43,7 +43,6 @@ public class CapturePoint implements Listener {
     private static final String EVENT_START_MSG = MSG_PREFIX + "The battle for %s begun!";
     private static final String EVENT_END_MSG = MSG_PREFIX + "%s won the battle for %s!";
     private static final String CANT_OPEN_MSG = MSG_PREFIX + "You can't open this chest!";
-
     
     private CLCapture plugin;
     
@@ -109,6 +108,9 @@ public class CapturePoint implements Listener {
         if (state == CapturePointState.INACTIVE && isCurrentOwner(event.getPlayer()))
             return;
         
+        if (winTime >= EXCLUSIVE_TIMEOUT)
+            return;
+        
         if (event.getPlayer().hasPermission(CLCapture.ADMIN_PERMISSION))
             return;
         
@@ -153,7 +155,7 @@ public class CapturePoint implements Listener {
         if (!event.hasBlock() || !event.getClickedBlock().equals(signLocation.getBlock()))
             return;
         
-        if (winTime < EXCLUSIVE_TIMEOUT && isCurrentOwner(event.getPlayer()))
+        if (isCurrentOwner(event.getPlayer()))
             return;
         
         currentOwner = convertToOwner(event.getPlayer());
