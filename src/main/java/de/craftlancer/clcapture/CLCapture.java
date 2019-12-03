@@ -120,14 +120,17 @@ public class CLCapture extends JavaPlugin implements Listener {
     }
     
     private void savePoints() {
-        try {
-            YamlConfiguration pointsData = new YamlConfiguration();
-            points.forEach(a -> a.save(pointsData));
-            pointsData.save(pointsFile);
-        }
-        catch (IOException e) {
-            Bukkit.getLogger().log(Level.SEVERE, "Error while saving points.yml", e);
-        }
+        YamlConfiguration pointsData = new YamlConfiguration();
+        points.forEach(a -> a.save(pointsData));
+        
+        new LambdaRunnable(() -> {
+            try {
+                pointsData.save(pointsFile);
+            }
+            catch (IOException e) {
+                Bukkit.getLogger().log(Level.SEVERE, "Error while saving points.yml", e);
+            }
+        }).runTaskAsynchronously(this);
     }
     
     private void saveTypes() {

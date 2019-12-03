@@ -101,10 +101,8 @@ public class CapturePoint implements Listener {
         return (Sign) signLocation.getBlock().getState();
     }
     
-    @EventHandler
+    @EventHandler(ignoreCancelled = true)
     public void onChestInteract(PlayerInteractEvent event) {
-        InventoryHolder holder = getInventory().getHolder();
-        
         if (state == CapturePointState.INACTIVE && isCurrentOwner(event.getPlayer()))
             return;
         
@@ -114,6 +112,7 @@ public class CapturePoint implements Listener {
         if (event.getPlayer().hasPermission(CLCapture.ADMIN_PERMISSION))
             return;
         
+        InventoryHolder holder = getInventory().getHolder();
         boolean cancel = false;
         
         if (holder instanceof Chest && ((Chest) holder).getBlock().equals(event.getClickedBlock()))
@@ -129,14 +128,14 @@ public class CapturePoint implements Listener {
         return item.getMaxStackSize() == 1;
     }
     
-    @EventHandler
+    @EventHandler(ignoreCancelled = true)
     public void onItemPick(InventoryClickEvent event) {
-        if (!getInventory().equals(event.getClickedInventory()))
-            return;
-        
         ItemStack currentItem = event.getCurrentItem();
         
         if (!isUnstackableItem(currentItem))
+            return;
+        
+        if (!getInventory().equals(event.getClickedInventory()))
             return;
         
         event.setCancelled(true);
@@ -164,15 +163,13 @@ public class CapturePoint implements Listener {
         Bukkit.broadcastMessage(String.format(CAPTURE_MESSAGE, getOwnerName(), this.name));
     }
     
-    @EventHandler
+    @EventHandler(ignoreCancelled = true)
     public void onBlockBreak(BlockBreakEvent event) {
-        InventoryHolder holder = getInventory().getHolder();
-        
-        if (event.getBlock().getLocation().equals(signLocation) || (holder instanceof Chest && ((Chest) holder).getBlock().equals(event.getBlock()))) {
+        if (event.getBlock().getLocation().equals(signLocation) || event.getBlock().getLocation().equals(chestLocation)) {
             if (event.getPlayer().hasPermission(CLCapture.ADMIN_PERMISSION)) {
                 plugin.removePoint(this);
                 signLocation.getBlock().breakNaturally();
-                ((Chest) holder).getBlock().breakNaturally();
+                chestLocation.getBlock().breakNaturally();
                 event.getPlayer().sendMessage("CapturePoint removed.");
             }
             else
