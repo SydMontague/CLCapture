@@ -203,6 +203,9 @@ public class CapturePoint implements Listener {
         
         lastTime = now;
         winTime++;
+        
+        if(currentOwner != null && winTime >= EXCLUSIVE_TIMEOUT)
+            currentOwner = null;
     }
     
     private void runActive() {
@@ -294,7 +297,7 @@ public class CapturePoint implements Listener {
     }
     
     private boolean isCurrentOwner(HumanEntity player) {
-        if (player == null)
+        if (currentOwner == null || player == null)
             return false;
         
         Clan c = plugin.getClanPlugin().getClan(Bukkit.getOfflinePlayer(player.getUniqueId()));
