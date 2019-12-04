@@ -11,6 +11,7 @@ import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
 import org.bukkit.block.Block;
 import org.bukkit.block.Chest;
+import org.bukkit.block.Container;
 import org.bukkit.block.Sign;
 import org.bukkit.boss.BarColor;
 import org.bukkit.boss.BarStyle;
@@ -24,6 +25,7 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.inventory.Inventory;
@@ -112,13 +114,7 @@ public class CapturePoint implements Listener {
         if (event.getPlayer().hasPermission(CLCapture.ADMIN_PERMISSION))
             return;
         
-        InventoryHolder holder = getInventory().getHolder();
-        boolean cancel = false;
-        
-        if (holder instanceof Chest && ((Chest) holder).getBlock().equals(event.getClickedBlock()))
-            cancel = true;
-        
-        if (cancel) {
+        if (getChestLoction().equals(event.getClickedBlock().getLocation())) {
             event.setCancelled(true);
             event.getPlayer().sendMessage(CANT_OPEN_MSG);
         }
@@ -131,11 +127,16 @@ public class CapturePoint implements Listener {
     @EventHandler(ignoreCancelled = true)
     public void onItemPick(InventoryClickEvent event) {
         ItemStack currentItem = event.getCurrentItem();
+        Inventory inventory = event.getClickedInventory();
+        InventoryHolder holder = inventory.getHolder();
+
+        if(inventory.getType() != InventoryType.CHEST)
+            return;
         
         if (currentItem == null || !isUnstackableItem(currentItem))
             return;
-        
-        if (!getInventory().equals(event.getClickedInventory()))
+
+        if (!(holder instanceof Container && ((Container) holder).getLocation().equals(getChestLoction())))
             return;
         
         event.setCancelled(true);
