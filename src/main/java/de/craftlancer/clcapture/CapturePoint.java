@@ -125,14 +125,14 @@ public class CapturePoint implements Listener {
     }
     
     private boolean isUnstackableItem(ItemStack item) {
-        return item.getMaxStackSize() == 1;
+        return item != null && item.getMaxStackSize() == 1;
     }
     
     @EventHandler(ignoreCancelled = true)
     public void onItemPick(InventoryClickEvent event) {
         ItemStack currentItem = event.getCurrentItem();
         
-        if (!isUnstackableItem(currentItem))
+        if (currentItem == null || !isUnstackableItem(currentItem))
             return;
         
         if (!getInventory().equals(event.getClickedInventory()))
