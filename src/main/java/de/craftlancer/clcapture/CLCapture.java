@@ -22,6 +22,7 @@ import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.SignChangeEvent;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scheduler.BukkitRunnable;
 
 import de.craftlancer.clcapture.commands.CaptureCommandHandler;
 import de.craftlancer.clclans.CLClans;
@@ -104,7 +105,7 @@ public class CLCapture extends JavaPlugin implements Listener {
         
         toRemove.forEach(a -> Bukkit.removeBossBar(a.getKey()));
         
-        savePoints();
+        savePoints(false);
         saveTypes();
     }
     
@@ -119,18 +120,22 @@ public class CLCapture extends JavaPlugin implements Listener {
                            .collect(Collectors.toList());
     }
     
-    private void savePoints() {
+    private void savePoints(boolean async) {
         YamlConfiguration pointsData = new YamlConfiguration();
         points.forEach(a -> a.save(pointsData));
         
-        new LambdaRunnable(() -> {
+        BukkitRunnable run = new LambdaRunnable(() -> {
             try {
                 pointsData.save(pointsFile);
             }
             catch (IOException e) {
                 Bukkit.getLogger().log(Level.SEVERE, "Error while saving points.yml", e);
             }
-        }).runTaskAsynchronously(this);
+        });
+        
+        if(async)
+            run.runTaskAsynchronously(this);
+        else run.run();
     }
     
     private void saveTypes() {
@@ -186,7 +191,7 @@ public class CLCapture extends JavaPlugin implements Listener {
         else {
             CapturePoint point = new CapturePoint(this, name, id, types.get(type), chestLocation, event.getBlock());
             points.add(point);
-            savePoints();
+            savePoints(true);
             event.getPlayer().sendMessage("CapPoint successfully created!");
         }
     }
@@ -203,7 +208,7 @@ public class CLCapture extends JavaPlugin implements Listener {
         points.remove(capturePoint);
         HandlerList.unregisterAll(capturePoint);
         capturePoint.destroy();
-        savePoints();
+        savePoints(true);
     }
     
     public CLClans getClanPlugin() {
