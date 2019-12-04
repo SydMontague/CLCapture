@@ -106,7 +106,7 @@ public class CapturePoint implements Listener {
         if (state == CapturePointState.INACTIVE && isCurrentOwner(event.getPlayer()))
             return;
         
-        if (winTime >= EXCLUSIVE_TIMEOUT)
+        if (winTime >= EXCLUSIVE_TIMEOUT || currentOwner == null)
             return;
         
         if (event.getPlayer().hasPermission(CLCapture.ADMIN_PERMISSION))
@@ -194,6 +194,11 @@ public class CapturePoint implements Listener {
     }
     
     private void runInactive() {
+        winTime++;
+        
+        if(currentOwner != null && winTime >= EXCLUSIVE_TIMEOUT)
+            currentOwner = null;
+        
         int now = LocalTime.now().toSecondOfDay();
         if (now == lastTime)
             return;
@@ -202,10 +207,6 @@ public class CapturePoint implements Listener {
             startEvent();
         
         lastTime = now;
-        winTime++;
-        
-        if(currentOwner != null && winTime >= EXCLUSIVE_TIMEOUT)
-            currentOwner = null;
     }
     
     private void runActive() {
