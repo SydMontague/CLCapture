@@ -28,9 +28,9 @@ public class TypeTimeRemoveCommand extends CaptureSubCommand {
             return "This type does not exist.";
         
         int time = Integer.parseInt(args[3]);
-        
-        if (!type.get().getPlayerModifier().containsKey(time))
-            return "No time with this player count exists.";
+
+        if(time >= type.get().getTimes().size())
+            return "No time with this id exists.";
         
         type.get().removeTime(time);
         return "Time removed.";

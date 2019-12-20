@@ -27,12 +27,12 @@ public class TypePModRemoveCommand extends CaptureSubCommand {
         if (!type.isPresent())
             return "This type does not exist.";
 
-        int time = Integer.parseInt(args[3]);
+        int playerCount = Integer.parseInt(args[3]);
         
-        if(time >= type.get().getTimes().size())
-            return "No pmod with this offset exists.";
+        if (!type.get().getPlayerModifier().containsKey(playerCount))
+            return "No pmod with this player count exists.";
 
-        type.get().removePMod(time);
+        type.get().removePMod(playerCount);
         return "PMod removed.";
     }
 
