@@ -36,12 +36,12 @@ import de.craftlancer.clcapture.CapturePointType.TimeOfDay;
 import de.craftlancer.clclans.Clan;
 
 public class CapturePoint implements Listener {
-    private static final int DISTANCE = 200;
     private static final long EXCLUSIVE_TIMEOUT = 6000;
     
     private static final String MSG_PREFIX = ChatColor.GRAY + "[CapPoints] ";
     
     private static final String CAPTURE_MESSAGE = MSG_PREFIX + "%s took the capture point %s";
+    private static final String CAPTURE_MESSAGE_PRIVATE = MSG_PREFIX + "You took the capture point %s";
     private static final String EVENT_START_MSG = MSG_PREFIX + "The battle for %s begun!";
     private static final String EVENT_END_MSG = MSG_PREFIX + "%s won the battle for %s!";
     private static final String CANT_OPEN_MSG = MSG_PREFIX + "You can't open this chest!";
@@ -161,7 +161,10 @@ public class CapturePoint implements Listener {
         currentOwner = convertToOwner(event.getPlayer());
         timeMap.putIfAbsent(currentOwner, 0);
         
-        Bukkit.broadcastMessage(String.format(CAPTURE_MESSAGE, getOwnerName(), this.name));
+        if(getType().isBroadcastStart())
+            Bukkit.broadcastMessage(String.format(CAPTURE_MESSAGE, getOwnerName(), this.name));
+        else
+            event.getPlayer().sendMessage(String.format(CAPTURE_MESSAGE_PRIVATE, this.name));
     }
     
     @EventHandler(ignoreCancelled = true)
@@ -219,10 +222,10 @@ public class CapturePoint implements Listener {
         bar.setTitle(name + " - " + getOwnerName());
         
         if (tickId % 20 == 0) {
-            bar.getPlayers().stream().filter(a -> a.getWorld().equals(signLocation.getWorld())).filter(a -> a.getLocation().distance(signLocation) >= DISTANCE)
+            bar.getPlayers().stream().filter(a -> a.getWorld().equals(signLocation.getWorld())).filter(a -> a.getLocation().distance(signLocation) >= type.getBossbarDistance())
                .forEach(bar::removePlayer);
             Bukkit.getOnlinePlayers().stream().filter(a -> a.getWorld().equals(signLocation.getWorld()))
-                  .filter(a -> a.getLocation().distance(signLocation) < DISTANCE).forEach(bar::addPlayer);
+                  .filter(a -> a.getLocation().distance(signLocation) < type.getBossbarDistance()).forEach(bar::addPlayer);
         }
         
         if (timeMap.getOrDefault(currentOwner, 0) >= type.getCaptureTime())
@@ -260,7 +263,8 @@ public class CapturePoint implements Listener {
         
         state = CapturePointState.ACTIVE;
         
-        Bukkit.broadcastMessage(String.format(EVENT_START_MSG, this.name));
+        if(type.isBroadcastStart())
+            Bukkit.broadcastMessage(String.format(EVENT_START_MSG, this.name));
         
         updateSign();
         winTime = 0;

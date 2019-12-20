@@ -13,15 +13,17 @@ public class TypeListCommand extends CaptureSubCommand {
     
     @Override
     protected String execute(CommandSender sender, Command cmd, String label, String[] args) {
-        sender.sendMessage("Name - CapTime - #Items - #Times - #PMods");
+        sender.sendMessage("Name - CapTime - #Items - #Times - #PMods - Distance - Broadcast");
         
         getPlugin().getTypes().values()
-                   .forEach(a -> sender.sendMessage(String.format("%s - %d - %d - %d - %d",
+                   .forEach(a -> sender.sendMessage(String.format("%s - %d - %d - %d - %d - %d - %b",
                                                                   a.getName(),
                                                                   a.getCaptureTime(),
                                                                   a.getItems().size(),
                                                                   a.getTimes().size(),
-                                                                  a.getPlayerModifier().size())));
+                                                                  a.getPlayerModifier().size(),
+                                                                  a.getBossbarDistance(),
+                                                                  a.isBroadcastStart())));
 
         return null;
     }

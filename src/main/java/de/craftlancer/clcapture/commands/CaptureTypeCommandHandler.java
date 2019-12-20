@@ -14,6 +14,8 @@ public class CaptureTypeCommandHandler extends SubCommandHandler {
         registerSubCommand("create", new TypeCreateCommand(plugin));
         registerSubCommand("delete", new TypeDeleteCommand(plugin));
         registerSubCommand("capturetime", new TypeCapturetimeCommand(plugin));
+        registerSubCommand("broadcast", new TypeBroadcastCommand(plugin));
+        registerSubCommand("distance", new TypeBossbarDistanceCommand(plugin));
         registerSubCommand("times", new TypeTimeListCommand(plugin));
         registerSubCommand("timeadd", new TypeTimeAddCommand(plugin));
         registerSubCommand("timeremove", new TypeTimeRemoveCommand(plugin));

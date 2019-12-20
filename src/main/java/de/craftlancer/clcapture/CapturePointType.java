@@ -16,6 +16,8 @@ public class CapturePointType {
     private List<ItemStack> items = new ArrayList<>();
     private List<TimeOfDay> times = new ArrayList<>();
     private int captureTime;
+    private int bossbarDistance;
+    private boolean broadcastStart;
     private NavigableMap<Integer, Float> playerModifier = new TreeMap<>();
     
     @SuppressWarnings("unchecked")
@@ -25,6 +27,8 @@ public class CapturePointType {
         items = (List<ItemStack>) config.getList("drops", new ArrayList<>());
         times = config.getStringList("times").stream().map(TimeOfDay::new).filter(TimeOfDay::isValid).collect(Collectors.toList());
         captureTime = config.getInt("captureTime", 18000); // 15 minutes
+        bossbarDistance = config.getInt("bossbarDistance", 200);
+        broadcastStart = config.getBoolean("broadcastStart", true);
         
         playerModifier.put(0, 1.0f); // default value
         config.getStringList("playerMod").forEach(a -> {
@@ -39,6 +43,8 @@ public class CapturePointType {
         ConfigurationSection section = config.createSection(getName());
         section.set("drops", items);
         section.set("captureTime", captureTime);
+        section.set("bossbarDistance", bossbarDistance);
+        section.set("broadcastStart", broadcastStart);
         section.set("playerMod", playerModifier.entrySet().stream().map(a -> a.getKey() + " " + a.getValue()).collect(Collectors.toList()));
         section.set("times", times.stream().map(TimeOfDay::toString).collect(Collectors.toList()));
     }
@@ -69,6 +75,22 @@ public class CapturePointType {
     
     public NavigableMap<Integer, Float> getPlayerModifier() {
         return Collections.unmodifiableNavigableMap(playerModifier);
+    }
+    
+    public int getBossbarDistance() {
+        return bossbarDistance;
+    }
+    
+    public boolean isBroadcastStart() {
+        return broadcastStart;
+    }
+    
+    public void setBossbarDistance(int bossbarDistance) {
+        this.bossbarDistance = bossbarDistance;
+    }
+    
+    public void setBroadcastStart(boolean broadcastStart) {
+        this.broadcastStart = broadcastStart;
     }
     
     public void addTime(TimeOfDay time) {
