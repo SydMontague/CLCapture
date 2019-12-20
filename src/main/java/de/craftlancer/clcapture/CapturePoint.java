@@ -128,14 +128,15 @@ public class CapturePoint implements Listener {
     public void onItemPick(InventoryClickEvent event) {
         ItemStack currentItem = event.getCurrentItem();
         Inventory inventory = event.getClickedInventory();
-        InventoryHolder holder = inventory.getHolder();
 
-        if(inventory.getType() != InventoryType.CHEST)
+        if(inventory == null || inventory.getType() != InventoryType.CHEST)
             return;
         
         if (currentItem == null || !isUnstackableItem(currentItem))
             return;
 
+        InventoryHolder holder = inventory.getHolder();
+        
         if (!(holder instanceof Container && ((Container) holder).getLocation().equals(getChestLoction())))
             return;
         
