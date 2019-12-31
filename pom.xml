@@ -10,6 +10,10 @@
       <id>spigot-repo</id>
       <url>http://hub.spigotmc.org/nexus/content/groups/public/</url>
     </repository>
+    <repository>
+      <id>Scarsz-Nexus</id>
+      <url>https://nexus.scarsz.me/content/groups/public/</url>
+    </repository>
   </repositories>
 
   <dependencies>
@@ -33,6 +37,13 @@
       <groupId>de.craftlancer</groupId>
       <artifactId>clclans</artifactId>
       <version>0.0.1-SNAPSHOT</version>
+    </dependency>
+    
+    <dependency>
+      <groupId>com.discordsrv</groupId>
+      <artifactId>discordsrv</artifactId>
+      <version>1.18.4</version>
+      <scope>provided</scope>
     </dependency>
   </dependencies>
   

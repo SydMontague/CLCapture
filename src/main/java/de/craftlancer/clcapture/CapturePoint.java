@@ -34,6 +34,8 @@ import org.bukkit.inventory.ItemStack;
 
 import de.craftlancer.clcapture.CapturePointType.TimeOfDay;
 import de.craftlancer.clclans.Clan;
+import github.scarsz.discordsrv.DiscordSRV;
+import github.scarsz.discordsrv.util.DiscordUtil;
 
 public class CapturePoint implements Listener {
     private static final long EXCLUSIVE_TIMEOUT = 6000;
@@ -162,8 +164,11 @@ public class CapturePoint implements Listener {
         currentOwner = convertToOwner(event.getPlayer());
         timeMap.putIfAbsent(currentOwner, 0);
         
-        if(getType().isBroadcastStart())
+        if(getType().isBroadcastStart()) {
             Bukkit.broadcastMessage(String.format(CAPTURE_MESSAGE, getOwnerName(), this.name));
+            if(plugin.isUsingDiscord())
+                DiscordUtil.queueMessage(DiscordSRV.getPlugin().getDestinationTextChannelForGameChannelName("event"), String.format(CAPTURE_MESSAGE, getOwnerName(), this.name));
+        }
         else
             event.getPlayer().sendMessage(String.format(CAPTURE_MESSAGE_PRIVATE, this.name));
     }
@@ -237,6 +242,9 @@ public class CapturePoint implements Listener {
         bar.removeAll();
         Bukkit.removeBossBar(new NamespacedKey(plugin, id));
         
+        if(plugin.isUsingDiscord())
+            DiscordUtil.queueMessage(DiscordSRV.getPlugin().getDestinationTextChannelForGameChannelName("event"), String.format(EVENT_END_MSG, getOwnerName(), this.name));
+
         Bukkit.broadcastMessage(String.format(EVENT_END_MSG, getOwnerName(), this.name));
         state = CapturePointState.INACTIVE;
         
@@ -264,9 +272,12 @@ public class CapturePoint implements Listener {
         
         state = CapturePointState.ACTIVE;
         
-        if(type.isBroadcastStart())
+        if(type.isBroadcastStart()) {
             Bukkit.broadcastMessage(String.format(EVENT_START_MSG, this.name));
-        
+            if(plugin.isUsingDiscord())
+                DiscordUtil.queueMessage(DiscordSRV.getPlugin().getDestinationTextChannelForGameChannelName("event"), String.format(EVENT_START_MSG, this.name));
+        }
+            
         updateSign();
         winTime = 0;
     }

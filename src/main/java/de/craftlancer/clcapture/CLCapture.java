@@ -74,8 +74,11 @@ public class CLCapture extends JavaPlugin implements Listener {
     private Map<String, CapturePointType> types;
     private List<CapturePoint> points;
     
+    private boolean useDiscord;
+    
     @Override
     public void onEnable() {
+        useDiscord = Bukkit.getPluginManager().getPlugin("DiscordSRV") != null;
         Bukkit.getPluginManager().registerEvents(this, this);
         
         clanPlugin = (CLClans) getServer().getPluginManager().getPlugin("CLClans");
@@ -229,5 +232,9 @@ public class CLCapture extends JavaPlugin implements Listener {
     
     public void addType(CapturePointType type) {
         types.put(type.getName(), type);
+    }
+    
+    public boolean isUsingDiscord() {
+        return useDiscord;
     }
 }
