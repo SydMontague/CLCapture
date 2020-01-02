@@ -40,13 +40,16 @@ import github.scarsz.discordsrv.util.DiscordUtil;
 public class CapturePoint implements Listener {
     private static final long EXCLUSIVE_TIMEOUT = 6000;
     
-    private static final String MSG_PREFIX = ChatColor.GRAY + "[CapPoints] ";
-    
-    private static final String CAPTURE_MESSAGE = MSG_PREFIX + "%s took the capture point %s";
-    private static final String CAPTURE_MESSAGE_PRIVATE = MSG_PREFIX + "You took the capture point %s";
-    private static final String EVENT_START_MSG = MSG_PREFIX + "The battle for %s begun!";
-    private static final String EVENT_END_MSG = MSG_PREFIX + "%s won the battle for %s!";
-    private static final String CANT_OPEN_MSG = MSG_PREFIX + "You can't open this chest!";
+    private static final String MSG_PREFIX = ChatColor.GRAY + "[§4Craft§fCitizen] ";
+
+    private static final String CAPTURE_MESSAGE_PRIVATE = MSG_PREFIX + "§eYou took the capture point %s";
+    private static final String CAPTURE_MESSAGE = MSG_PREFIX + "%s §etook the capture point %s";
+    private static final String CAPTURE_MESSAGE_DISCORD = ":bannerred:%s took the capture point %s";
+    private static final String EVENT_START_MSG = MSG_PREFIX + "§eThe battle for %s begun!";
+    private static final String EVENT_START_MSG_DISCORD = ":bannerwhite:The battle for %s has begun! @Capturepoint";
+    private static final String EVENT_END_MSG = MSG_PREFIX + "%s §ewon the battle for %s!";
+    private static final String EVENT_END_MSG_DISCORD = ":bannergreen:%s won the battle for %s!";
+    private static final String CANT_OPEN_MSG = MSG_PREFIX + "§eYou can't open this chest!";
     
     private CLCapture plugin;
     
@@ -167,7 +170,7 @@ public class CapturePoint implements Listener {
         if(getType().isBroadcastStart()) {
             Bukkit.broadcastMessage(String.format(CAPTURE_MESSAGE, getOwnerName(), this.name));
             if(plugin.isUsingDiscord())
-                DiscordUtil.queueMessage(DiscordSRV.getPlugin().getDestinationTextChannelForGameChannelName("event"), String.format(CAPTURE_MESSAGE, getOwnerName(), this.name));
+                DiscordUtil.queueMessage(DiscordSRV.getPlugin().getDestinationTextChannelForGameChannelName("event"), String.format(CAPTURE_MESSAGE_DISCORD, getOwnerName(), this.name));
         }
         else
             event.getPlayer().sendMessage(String.format(CAPTURE_MESSAGE_PRIVATE, this.name));
@@ -245,7 +248,7 @@ public class CapturePoint implements Listener {
         if(plugin.isUsingDiscord())
             DiscordUtil.queueMessage(DiscordSRV.getPlugin().getDestinationTextChannelForGameChannelName("event"), String.format(EVENT_END_MSG, getOwnerName(), this.name));
 
-        Bukkit.broadcastMessage(String.format(EVENT_END_MSG, getOwnerName(), this.name));
+        Bukkit.broadcastMessage(String.format(EVENT_END_MSG_DISCORD, getOwnerName(), this.name));
         state = CapturePointState.INACTIVE;
         
         type.getItems().forEach(a -> {
@@ -275,7 +278,7 @@ public class CapturePoint implements Listener {
         if(type.isBroadcastStart()) {
             Bukkit.broadcastMessage(String.format(EVENT_START_MSG, this.name));
             if(plugin.isUsingDiscord())
-                DiscordUtil.queueMessage(DiscordSRV.getPlugin().getDestinationTextChannelForGameChannelName("event"), String.format(EVENT_START_MSG, this.name));
+                DiscordUtil.queueMessage(DiscordSRV.getPlugin().getDestinationTextChannelForGameChannelName("event"), String.format(EVENT_START_MSG_DISCORD, this.name));
         }
             
         updateSign();
