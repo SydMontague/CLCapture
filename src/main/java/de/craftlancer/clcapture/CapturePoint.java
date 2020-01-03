@@ -46,8 +46,8 @@ public class CapturePoint implements Listener {
     private static final String CAPTURE_MESSAGE = MSG_PREFIX + "%s §etook the capture point %s";
     private static final String CAPTURE_MESSAGE_DISCORD = ":bannerred:%s took the capture point %s";
     private static final String EVENT_START_MSG = MSG_PREFIX + "§eThe battle for %s begun!";
-    private static final String EVENT_START_MSG_DISCORD = ":bannerwhite:The battle for %s has begun! <@!661388575039946752>";
-    private static final String EVENT_END_MSG = MSG_PREFIX + "%s §ewon the battle for %s!";
+    private static final String EVENT_START_MSG_DISCORD = ":bannerwhite:The battle for %s has begun! <@&661388575039946752>";
+    private static final String EVENT_END_MSG = MSG_PREFIX + "%s §ewon the battle for %s!";          
     private static final String EVENT_END_MSG_DISCORD = ":bannergreen:%s won the battle for %s!";
     private static final String CANT_OPEN_MSG = MSG_PREFIX + "§eYou can't open this chest!";
     
