@@ -9,6 +9,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.block.Block;
 import org.bukkit.block.Chest;
 import org.bukkit.block.Container;
@@ -19,7 +20,6 @@ import org.bukkit.boss.KeyedBossBar;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.HumanEntity;
-import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -304,8 +304,8 @@ public class CapturePoint implements Listener {
         if (c != null)
             return c.getName();
         
-        Player p = Bukkit.getPlayer(currentOwner);
-        if (p != null)
+        OfflinePlayer p = Bukkit.getOfflinePlayer(currentOwner);
+        if (p.hasPlayedBefore())
             return p.getName();
         
         return "Uncaptured";
