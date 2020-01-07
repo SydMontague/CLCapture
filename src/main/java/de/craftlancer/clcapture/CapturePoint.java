@@ -41,13 +41,13 @@ public class CapturePoint implements Listener {
     private static final long EXCLUSIVE_TIMEOUT = 6000;
     
     private static final String MSG_PREFIX = ChatColor.GRAY + "[§4Craft§fCitizen] ";
-
+    
     private static final String CAPTURE_MESSAGE_PRIVATE = MSG_PREFIX + "§eYou took the capture point %s";
     private static final String CAPTURE_MESSAGE = MSG_PREFIX + "%s §etook the capture point %s";
     private static final String CAPTURE_MESSAGE_DISCORD = ":bannerred:%s took the capture point %s";
     private static final String EVENT_START_MSG = MSG_PREFIX + "§eThe battle for %s begun!";
     private static final String EVENT_START_MSG_DISCORD = ":bannerwhite:The battle for %s has begun! <@&661388575039946752>";
-    private static final String EVENT_END_MSG = MSG_PREFIX + "%s §ewon the battle for %s!";          
+    private static final String EVENT_END_MSG = MSG_PREFIX + "%s §ewon the battle for %s!";
     private static final String EVENT_END_MSG_DISCORD = ":bannergreen:%s won the battle for %s!";
     private static final String CANT_OPEN_MSG = MSG_PREFIX + "§eYou can't open this chest!";
     
@@ -133,13 +133,13 @@ public class CapturePoint implements Listener {
     public void onItemPick(InventoryClickEvent event) {
         ItemStack currentItem = event.getCurrentItem();
         Inventory inventory = event.getClickedInventory();
-
-        if(inventory == null || inventory.getType() != InventoryType.CHEST)
+        
+        if (inventory == null || inventory.getType() != InventoryType.CHEST)
             return;
         
         if (currentItem == null || !isUnstackableItem(currentItem))
             return;
-
+        
         InventoryHolder holder = inventory.getHolder();
         
         if (!(holder instanceof Container && ((Container) holder).getLocation().equals(getChestLoction())))
@@ -167,10 +167,11 @@ public class CapturePoint implements Listener {
         currentOwner = convertToOwner(event.getPlayer());
         timeMap.putIfAbsent(currentOwner, 0);
         
-        if(getType().isBroadcastStart()) {
+        if (getType().isBroadcastStart()) {
             Bukkit.broadcastMessage(String.format(CAPTURE_MESSAGE, getOwnerName(), this.name));
-            if(plugin.isUsingDiscord() && !type.isBroadcastStart())
-                DiscordUtil.queueMessage(DiscordSRV.getPlugin().getDestinationTextChannelForGameChannelName("event"), String.format(CAPTURE_MESSAGE_DISCORD, getOwnerName(), this.name));
+            if (plugin.isUsingDiscord() && !type.isBroadcastStart())
+                DiscordUtil.queueMessage(DiscordSRV.getPlugin().getDestinationTextChannelForGameChannelName("event"),
+                                         String.format(CAPTURE_MESSAGE_DISCORD, getOwnerName(), this.name));
         }
         else
             event.getPlayer().sendMessage(String.format(CAPTURE_MESSAGE_PRIVATE, this.name));
@@ -209,7 +210,7 @@ public class CapturePoint implements Listener {
     private void runInactive() {
         winTime++;
         
-        if(currentOwner != null && winTime >= EXCLUSIVE_TIMEOUT)
+        if (currentOwner != null && winTime >= EXCLUSIVE_TIMEOUT)
             currentOwner = null;
         
         int now = LocalTime.now().toSecondOfDay();
@@ -231,8 +232,8 @@ public class CapturePoint implements Listener {
         bar.setTitle(name + " - " + getOwnerName());
         
         if (tickId % 20 == 0) {
-            bar.getPlayers().stream().filter(a -> a.getWorld().equals(signLocation.getWorld())).filter(a -> a.getLocation().distance(signLocation) >= type.getBossbarDistance())
-               .forEach(bar::removePlayer);
+            bar.getPlayers().stream().filter(a -> a.getWorld().equals(signLocation.getWorld()))
+               .filter(a -> a.getLocation().distance(signLocation) >= type.getBossbarDistance()).forEach(bar::removePlayer);
             Bukkit.getOnlinePlayers().stream().filter(a -> a.getWorld().equals(signLocation.getWorld()))
                   .filter(a -> a.getLocation().distance(signLocation) < type.getBossbarDistance()).forEach(bar::addPlayer);
         }
@@ -245,9 +246,10 @@ public class CapturePoint implements Listener {
         bar.removeAll();
         Bukkit.removeBossBar(new NamespacedKey(plugin, id));
         
-        if(plugin.isUsingDiscord() && !type.isBroadcastStart())
-            DiscordUtil.queueMessage(DiscordSRV.getPlugin().getDestinationTextChannelForGameChannelName("event"), String.format(EVENT_END_MSG_DISCORD, getOwnerName(), this.name));
-
+        if (plugin.isUsingDiscord() && !type.isBroadcastStart())
+            DiscordUtil.queueMessage(DiscordSRV.getPlugin().getDestinationTextChannelForGameChannelName("event"),
+                                     String.format(EVENT_END_MSG_DISCORD, getOwnerName(), this.name));
+        
         Bukkit.broadcastMessage(String.format(EVENT_END_MSG, getOwnerName(), this.name));
         state = CapturePointState.INACTIVE;
         
@@ -275,12 +277,13 @@ public class CapturePoint implements Listener {
         
         state = CapturePointState.ACTIVE;
         
-        if(type.isBroadcastStart()) {
+        if (type.isBroadcastStart()) {
             Bukkit.broadcastMessage(String.format(EVENT_START_MSG, this.name));
-            if(plugin.isUsingDiscord())
-                DiscordUtil.queueMessage(DiscordSRV.getPlugin().getDestinationTextChannelForGameChannelName("event"), String.format(EVENT_START_MSG_DISCORD, this.name));
+            if (plugin.isUsingDiscord())
+                DiscordUtil.queueMessage(DiscordSRV.getPlugin().getDestinationTextChannelForGameChannelName("event"),
+                                         String.format(EVENT_START_MSG_DISCORD, this.name));
         }
-            
+        
         updateSign();
         winTime = 0;
     }
@@ -300,6 +303,9 @@ public class CapturePoint implements Listener {
     }
     
     private String getOwnerName() {
+        if (currentOwner == null)
+            return "Uncaptured";
+        
         Clan c = plugin.getClanPlugin().getClanByUUID(currentOwner);
         if (c != null)
             return c.getName();
