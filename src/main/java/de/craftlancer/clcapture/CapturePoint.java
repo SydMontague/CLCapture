@@ -169,7 +169,7 @@ public class CapturePoint implements Listener {
         
         if (getType().isBroadcastStart()) {
             Bukkit.broadcastMessage(String.format(CAPTURE_MESSAGE, getOwnerName(), this.name));
-            if (plugin.isUsingDiscord() && !type.isBroadcastStart())
+            if (plugin.isUsingDiscord())
                 DiscordUtil.queueMessage(DiscordSRV.getPlugin().getDestinationTextChannelForGameChannelName("event"),
                                          String.format(CAPTURE_MESSAGE_DISCORD, getOwnerName(), this.name));
         }
@@ -246,7 +246,7 @@ public class CapturePoint implements Listener {
         bar.removeAll();
         Bukkit.removeBossBar(new NamespacedKey(plugin, id));
         
-        if (plugin.isUsingDiscord() && !type.isBroadcastStart())
+        if (plugin.isUsingDiscord() && type.isBroadcastStart())
             DiscordUtil.queueMessage(DiscordSRV.getPlugin().getDestinationTextChannelForGameChannelName("event"),
                                      String.format(EVENT_END_MSG_DISCORD, getOwnerName(), this.name));
         
