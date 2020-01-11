@@ -311,7 +311,7 @@ public class CapturePoint implements Listener {
             return c.getName();
         
         OfflinePlayer p = Bukkit.getOfflinePlayer(currentOwner);
-        if (p.hasPlayedBefore())
+        if (p.isOnline())
             return p.getName();
         
         return "Uncaptured";
