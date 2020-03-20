@@ -11,12 +11,11 @@ import org.bukkit.inventory.ItemStack;
 
 import de.craftlancer.clcapture.CLCapture;
 import de.craftlancer.clcapture.CapturePointType;
+import de.craftlancer.core.Utils;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.ClickEvent;
 import net.md_5.bungee.api.chat.ClickEvent.Action;
-import net.md_5.bungee.api.chat.HoverEvent;
 import net.md_5.bungee.api.chat.TextComponent;
-import net.minecraft.server.v1_14_R1.NBTTagCompound;
 
 public class TypeItemListCommand extends CaptureSubCommand {
     
@@ -38,16 +37,12 @@ public class TypeItemListCommand extends CaptureSubCommand {
         
         int id = 0;
         for(ItemStack a : type.get().getItems()) {
-            BaseComponent item = new TextComponent(a.getType().name());
-            item.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_ITEM, new BaseComponent[] {
-                    new TextComponent(org.bukkit.craftbukkit.v1_14_R1.inventory.CraftItemStack.asNMSCopy(a).save(new NBTTagCompound()).toString()) }));
-            
             BaseComponent delAction = new TextComponent("[Delete]");
             delAction.setClickEvent(new ClickEvent(Action.RUN_COMMAND, "/capture type itemremove " + type.get().getName() + " " + id));
             
             BaseComponent base = new TextComponent(Integer.toString(id));
             base.addExtra(" - ");
-            base.addExtra(item);
+            base.addExtra(Utils.getItemComponent(a));
             base.addExtra(" - ");
             base.addExtra(Integer.toString(a.getAmount()));
             base.addExtra(" - ");
