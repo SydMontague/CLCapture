@@ -2,8 +2,7 @@ name: CLCapture
 main: de.craftlancer.clcapture.CLCapture
 api-version: 1.14
 depend: [CLCore]
-soft-depend: [CLClans]
-loadbefore: [FactionMobs]
+softdepend: [CLClans]
 version: ${project.version}
 permissions:
   clcapture.admin:
