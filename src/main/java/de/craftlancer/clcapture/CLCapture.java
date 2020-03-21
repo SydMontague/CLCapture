@@ -90,7 +90,7 @@ public class CLCapture extends JavaPlugin implements Listener {
         
         getCommand("capture").setExecutor(new CaptureCommandHandler(this));
         
-        new LambdaRunnable(this::saveTypes).runTaskTimer(this, 18000L, 18000L);
+        new LambdaRunnable(() -> saveTypes(true)).runTaskTimer(this, 18000L, 18000L);
         new LambdaRunnable(() -> points.forEach(CapturePoint::run)).runTaskTimer(this, 1L, 1L);
         new LambdaRunnable(() -> playerCountBuffer.push(Bukkit.getOnlinePlayers().size())).runTaskTimer(this, 0L, PLAYER_BUFFER_FREQUENCY);
     }
@@ -109,7 +109,7 @@ public class CLCapture extends JavaPlugin implements Listener {
         toRemove.forEach(a -> Bukkit.removeBossBar(a.getKey()));
         
         savePoints(false);
-        saveTypes();
+        saveTypes(false);
     }
     
     private void loadConfig() {
@@ -141,15 +141,23 @@ public class CLCapture extends JavaPlugin implements Listener {
         else run.run();
     }
     
-    private void saveTypes() {
+    private void saveTypes(boolean async) {
+        YamlConfiguration typesData = new YamlConfiguration();
+        types.forEach((b, a) -> a.save(typesData));
+
+        BukkitRunnable run = new LambdaRunnable(() -> {
         try {
-            YamlConfiguration typesData = new YamlConfiguration();
-            types.forEach((b, a) -> a.save(typesData));
             typesData.save(typesFile);
         }
         catch (IOException e) {
             Bukkit.getLogger().log(Level.SEVERE, "Error while saving types.yml", e);
         }
+        });
+        
+        if(async)
+            run.runTaskAsynchronously(this);
+        else
+            run.run();
     }
     
     @Override
