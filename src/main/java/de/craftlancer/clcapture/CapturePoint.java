@@ -317,12 +317,6 @@ public class CapturePoint implements Listener {
         return "Uncaptured";
     }
     
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.MONITOR)
-    public void onJoin(PlayerJoinEvent event) {
-        if (state == CapturePointState.ACTIVE)
-            bar.addPlayer(event.getPlayer());
-    }
-    
     private boolean isCurrentOwner(HumanEntity player) {
         if (currentOwner == null || player == null)
             return false;
