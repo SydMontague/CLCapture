@@ -14,11 +14,14 @@ import de.craftlancer.clcapture.CapturePointType;
 public class TypeDeleteCommand extends CaptureSubCommand {
     
     public TypeDeleteCommand(CLCapture plugin) {
-        super("", plugin, true);
+        super(CLCapture.ADMIN_PERMISSION, plugin, true);
     }
 
     @Override
     protected String execute(CommandSender sender, Command cmd, String label, String[] args) {
+        if(!checkSender(sender))
+            return "You're not allowed to use this command.";
+        
         if (args.length < 3)
             return "You must specify a type id.";
         

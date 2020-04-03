@@ -15,11 +15,14 @@ import de.craftlancer.clcapture.CapturePoint;
 public class PointTPCommand extends CaptureSubCommand {
     
     public PointTPCommand(CLCapture plugin) {
-        super("", plugin, true);
+        super(CLCapture.ADMIN_PERMISSION, plugin, true);
     }
     
     @Override
     protected String execute(CommandSender sender, Command cmd, String label, String[] args) {
+        if(!checkSender(sender))
+            return "You're not allowed to use this command.";
+        
         if (!(sender instanceof Player))
             return "You must be a player to teleport yourself.";
         if (args.length < 3)

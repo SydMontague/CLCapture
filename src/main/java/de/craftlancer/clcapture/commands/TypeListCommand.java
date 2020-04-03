@@ -8,11 +8,14 @@ import de.craftlancer.clcapture.CLCapture;
 public class TypeListCommand extends CaptureSubCommand {
     
     public TypeListCommand(CLCapture plugin) {
-        super("", plugin, true);
+        super(CLCapture.ADMIN_PERMISSION, plugin, true);
     }
     
     @Override
     protected String execute(CommandSender sender, Command cmd, String label, String[] args) {
+        if(!checkSender(sender))
+            return "You're not allowed to use this command.";
+        
         sender.sendMessage("Name - CapTime - #Items - #Times - #PMods - Distance - Broadcast");
         
         getPlugin().getTypes().values()

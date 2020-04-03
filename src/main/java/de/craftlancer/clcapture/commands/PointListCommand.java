@@ -14,11 +14,14 @@ import net.md_5.bungee.api.chat.TextComponent;
 public class PointListCommand extends CaptureSubCommand {
     
     public PointListCommand(CLCapture plugin) {
-        super("", plugin, true);
+        super(CLCapture.ADMIN_PERMISSION, plugin, true);
     }
 
     @Override
     protected String execute(CommandSender sender, Command cmd, String label, String[] args) {
+        if(!checkSender(sender))
+            return "You're not allowed to use this command.";
+        
         sender.sendMessage("ID Name Type Location - Next Action");
         
         getPlugin().getPoints().forEach(a -> {

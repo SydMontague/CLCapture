@@ -16,7 +16,7 @@ import de.craftlancer.clcapture.CapturePointType;
 public class TypeItemAddCommand extends CaptureSubCommand {
     
     public TypeItemAddCommand(CLCapture plugin) {
-        super("", plugin, false);
+        super(CLCapture.ADMIN_PERMISSION, plugin, false);
     }
 
     @Override
