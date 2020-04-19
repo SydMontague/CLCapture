@@ -202,24 +202,25 @@ public class CapturePoint implements Listener {
     }
     
     private void runActive() {
-        boolean areMultipleClans;
         HashMap<UUID, Integer> inRegionMap = new HashMap<>();
         lastTime = LocalTime.now().toSecondOfDay();
         
         //If a player is within the capturepoint region, add them to the list.
         Bukkit.getOnlinePlayers().forEach(a -> {
             if (isInRegion(a))
-                inRegionMap.compute(convertToOwner(a), (b, c) -> b == null ? 1 : c + 1);
+                inRegionMap.compute(convertToOwner(a), (b, c) -> inRegionMap.containsKey(b) ? c + 1 : 1);
         });
         
         //See if there are multiple clans by comparing clans
-        areMultipleClans = inRegionMap.size() > 1;
         
         //If there are multiple clans present in the region, don't add to bossbar/map
-        if (!areMultipleClans) {
-            setOwner(inRegionMap);
-            handleBossBarAndTime(inRegionMap.get(currentOwner));
-        }
+        setOwner(inRegionMap);
+        
+        int scoreMultiplier = inRegionMap.get(currentOwner) == null ? 1 : inRegionMap.get(currentOwner);
+        timeMap.replaceAll((a, b) -> a.equals(currentOwner) ? b + scoreMultiplier : Math.max(b - scoreMultiplier, 0));
+        bar.setProgress(Math.min(timeMap.getOrDefault(currentOwner, 0) / (double) type.getCaptureTime(), 1D));
+        bar.setTitle(name + " - " + getOwnerName());
+        bar.setColor(ClanColorUtil.getBarColor(plugin.getClanPlugin().getClanByUUID(currentOwner)));
     
         //Check if players are within distance to add to the boss bar
         if (tickId % 20 == 0) {
@@ -255,15 +256,8 @@ public class CapturePoint implements Listener {
             if (currentOwner != previousOwner)
                 setClanColors(plugin.getClanPlugin().getClanByUUID(currentOwner));
             timeMap.putIfAbsent(currentOwner, 0);
-        }
-    }
-    
-    private void handleBossBarAndTime(int scoreMultiplier) {
-        //If the owner isn't standing on it, the time will dwindle down
-        timeMap.replaceAll((a, b) -> a.equals(currentOwner) ? b + scoreMultiplier : Math.max(b - scoreMultiplier, 0));
-        bar.setProgress(Math.min(timeMap.getOrDefault(currentOwner, 0) / (double) type.getCaptureTime(), 1D));
-        bar.setTitle(name + " - " + getOwnerName());
-        bar.setColor(ClanColorUtil.getBarColor(plugin.getClanPlugin().getClanByUUID(currentOwner)));
+        } else
+            currentOwner = null;
     }
     
     private void handleWin() {
