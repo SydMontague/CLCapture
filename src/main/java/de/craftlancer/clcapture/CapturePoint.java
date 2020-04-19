@@ -79,7 +79,6 @@ public class CapturePoint implements Listener {
         this.type = type;
         this.chestLocation = chestLocation.getLocation();
         setRegion(this.chestLocation);
-        clanPlugin = (CLClans) Bukkit.getPluginManager().getPlugin("CLClans");
     }
     
     public CapturePoint(CLCapture plugin, String id, ConfigurationSection config) {
@@ -147,27 +146,6 @@ public class CapturePoint implements Listener {
             currentItem.setAmount(currentItem.getAmount() - 1);
     }
     
-    /**
-     * TODO Not interact event, but if stand above area
-     */
-	/*@EventHandler
-	public void onInteract(PlayerInteractEvent event) {
-		if (state == CapturePointState.INACTIVE)
-			return;
-		if (isCurrentOwner(event.getPlayer()))
-			return;
-
-		currentOwner = convertToOwner(event.getPlayer());
-		timeMap.putIfAbsent(currentOwner, 0);
-
-		if (getType().isBroadcastStart()) {
-			Bukkit.broadcastMessage(String.format(CAPTURE_MESSAGE, getOwnerName(), this.name));
-			if (plugin.isUsingDiscord())
-				DiscordUtil.queueMessage(DiscordSRV.getPlugin().getDestinationTextChannelForGameChannelName("event"),
-						String.format(CAPTURE_MESSAGE_DISCORD, getOwnerName(), this.name));
-		} else
-			event.getPlayer().sendMessage(String.format(CAPTURE_MESSAGE_PRIVATE, this.name));
-	}*/
     @EventHandler(ignoreCancelled = true)
     public void onBlockBreak(BlockBreakEvent event) {
         if (event.getBlock().getLocation().equals(chestLocation)) {
