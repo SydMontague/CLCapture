@@ -100,19 +100,19 @@ public class CapturePointType {
     public void removeTime(int index) {
         times.remove(index);
     }
-
+    
     public void addPMod(int numPlayers, float mod) {
         playerModifier.put(numPlayers, mod);
     }
-
+    
     public void addItem(ItemStack item) {
         items.add(item);
     }
-
+    
     public void removeItem(int index) {
         items.remove(index);
     }
-
+    
     public void removePMod(int playerCount) {
         playerModifier.remove(playerCount);
     }

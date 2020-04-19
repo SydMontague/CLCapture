@@ -1,5 +1,22 @@
 package de.craftlancer.clcapture;
 
+import de.craftlancer.clcapture.commands.CaptureCommandHandler;
+import de.craftlancer.clcapture.events.PointAddEvent;
+import de.craftlancer.clclans.CLClans;
+import de.craftlancer.core.IntRingBuffer;
+import de.craftlancer.core.LambdaRunnable;
+import org.bukkit.Bukkit;
+import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.boss.KeyedBossBar;
+import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.HandlerList;
+import org.bukkit.event.Listener;
+import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scheduler.BukkitRunnable;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -9,32 +26,12 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 
-import org.bukkit.Bukkit;
-import org.bukkit.Material;
-import org.bukkit.block.Block;
-import org.bukkit.block.BlockFace;
-import org.bukkit.boss.KeyedBossBar;
-import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.EventPriority;
-import org.bukkit.event.HandlerList;
-import org.bukkit.event.Listener;
-import org.bukkit.event.block.SignChangeEvent;
-import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.scheduler.BukkitRunnable;
-
-import de.craftlancer.clcapture.commands.CaptureCommandHandler;
-import de.craftlancer.clclans.CLClans;
-import de.craftlancer.core.IntRingBuffer;
-import de.craftlancer.core.LambdaRunnable;
-
 /*
  * /capture listpoints
  * ID - Name - Location - Next - Owner - Action (Delete, TP, Set Type, Start)
- * 
+ *
  * X - CapPointMain1 - ACTIVE - Uncaptured - [TP][Del][TP]
- * 
+ *
  * /capture point
  * /capture point list
  * /capture point tp <id>
@@ -53,13 +50,12 @@ import de.craftlancer.core.LambdaRunnable;
  * /capture type create <name>
  * /capture type delete
  * /capture type capturetime <time>
- * 
- * 
- * 
+ *
+ *
+ *
  */
 
 public class CLCapture extends JavaPlugin implements Listener {
-    private static final String SIGN_HEADER = "[CapPoints]";
     public static final String ADMIN_PERMISSION = "clcapture.admin";
     
     private static final int PLAYER_BUFFER_SIZE = 60; // number of updates kept
@@ -117,10 +113,10 @@ public class CLCapture extends JavaPlugin implements Listener {
         FileConfiguration typesData = YamlConfiguration.loadConfiguration(typesFile);
         
         types = typesData.getKeys(false).stream().map(key -> new CapturePointType(typesData.getConfigurationSection(key)))
-                         .collect(Collectors.toMap(CapturePointType::getName, a -> a));
+                .collect(Collectors.toMap(CapturePointType::getName, a -> a));
         
         points = pointsData.getKeys(false).stream().map(key -> new CapturePoint(this, key, pointsData.getConfigurationSection(key)))
-                           .collect(Collectors.toList());
+                .collect(Collectors.toList());
     }
     
     private void savePoints(boolean async) {
@@ -130,13 +126,12 @@ public class CLCapture extends JavaPlugin implements Listener {
         BukkitRunnable run = new LambdaRunnable(() -> {
             try {
                 pointsData.save(pointsFile);
-            }
-            catch (IOException e) {
+            } catch (IOException e) {
                 Bukkit.getLogger().log(Level.SEVERE, "Error while saving points.yml", e);
             }
         });
         
-        if(async)
+        if (async)
             run.runTaskAsynchronously(this);
         else run.run();
     }
@@ -144,17 +139,16 @@ public class CLCapture extends JavaPlugin implements Listener {
     private void saveTypes(boolean async) {
         YamlConfiguration typesData = new YamlConfiguration();
         types.forEach((b, a) -> a.save(typesData));
-
+        
         BukkitRunnable run = new LambdaRunnable(() -> {
-        try {
-            typesData.save(typesFile);
-        }
-        catch (IOException e) {
-            Bukkit.getLogger().log(Level.SEVERE, "Error while saving types.yml", e);
-        }
+            try {
+                typesData.save(typesFile);
+            } catch (IOException e) {
+                Bukkit.getLogger().log(Level.SEVERE, "Error while saving types.yml", e);
+            }
         });
         
-        if(async)
+        if (async)
             run.runTaskAsynchronously(this);
         else
             run.run();
@@ -167,27 +161,17 @@ public class CLCapture extends JavaPlugin implements Listener {
         if (!pointsFile.exists())
             try {
                 Files.createFile(pointsFile.toPath());
-            }
-            catch (IOException e) {
+            } catch (IOException e) {
                 Bukkit.getLogger().log(Level.WARNING, "Error while creating points.yml", e);
             }
     }
     
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.LOWEST)
-    public void onSignCreation(SignChangeEvent event) {
-        if (!event.getLine(0).equalsIgnoreCase(SIGN_HEADER))
-            return;
-        
-        if (!event.getPlayer().hasPermission(ADMIN_PERMISSION)) {
-            event.setCancelled(true);
-            return;
-        }
-        
-        String type = event.getLine(1);
-        String name = event.getLine(2);
-        String id = event.getLine(3);
-        
-        Block chestLocation = event.getBlock().getRelative(BlockFace.DOWN);
+    @EventHandler
+    public void onPointAddCommand(PointAddEvent event) {
+        Location chestLocation = event.getChestLocation();
+        String type = event.getType();
+        String name = event.getName();
+        String id = event.getId();
         
         if (!types.containsKey(type))
             event.getPlayer().sendMessage("This capture point type does not exist!");
@@ -197,10 +181,10 @@ public class CLCapture extends JavaPlugin implements Listener {
             event.getPlayer().sendMessage("A capture point with this name already exists!");
         else if (points.stream().map(CapturePoint::getId).anyMatch(a -> a.equals(name)))
             event.getPlayer().sendMessage("A capture point with this id already exists!");
-        else if (chestLocation.getType() != Material.CHEST && chestLocation.getType() != Material.TRAPPED_CHEST)
-            event.getPlayer().sendMessage("The sign must be placed directly above a Chest!");
+        else if (chestLocation.getBlock().getType() != Material.CHEST && chestLocation.getBlock().getType() != Material.TRAPPED_CHEST)
+            event.getPlayer().sendMessage("You must be looking at a chest!");
         else {
-            CapturePoint point = new CapturePoint(this, name, id, types.get(type), chestLocation, event.getBlock());
+            CapturePoint point = new CapturePoint(this, name, id, types.get(type), chestLocation.getBlock());
             points.add(point);
             savePoints(true);
             event.getPlayer().sendMessage("CapPoint successfully created!");

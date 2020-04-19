@@ -13,6 +13,7 @@ public class CapturePointCommandHandler extends SubCommandHandler {
         registerSubCommand("list", new PointListCommand(plugin));
         registerSubCommand("tp", new PointTPCommand(plugin));
         registerSubCommand("start", new PointStartCommand(plugin));
+        registerSubCommand("add", new PointAddCommand(plugin));
     }
 
     @Override

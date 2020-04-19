@@ -1,25 +1,22 @@
 package de.craftlancer.clcapture;
 
-import java.time.LocalTime;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
-
-import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
-import org.bukkit.Location;
-import org.bukkit.NamespacedKey;
-import org.bukkit.OfflinePlayer;
+import de.craftlancer.clcapture.CapturePointType.TimeOfDay;
+import de.craftlancer.clcapture.util.ClanColorUtil;
+import de.craftlancer.clclans.CLClans;
+import de.craftlancer.clclans.Clan;
+import github.scarsz.discordsrv.DiscordSRV;
+import github.scarsz.discordsrv.util.DiscordUtil;
+import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.Chest;
 import org.bukkit.block.Container;
-import org.bukkit.block.Sign;
 import org.bukkit.boss.BarColor;
 import org.bukkit.boss.BarStyle;
 import org.bukkit.boss.KeyedBossBar;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.HumanEntity;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
@@ -30,10 +27,8 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 
-import de.craftlancer.clcapture.CapturePointType.TimeOfDay;
-import de.craftlancer.clclans.Clan;
-import github.scarsz.discordsrv.DiscordSRV;
-import github.scarsz.discordsrv.util.DiscordUtil;
+import java.time.LocalTime;
+import java.util.*;
 
 public class CapturePoint implements Listener {
     private static final long EXCLUSIVE_TIMEOUT = 6000;
@@ -55,9 +50,11 @@ public class CapturePoint implements Listener {
     private final String id;
     private final String name;
     private final CapturePointType type;
-    
     private final Location chestLocation;
-    private final Location signLocation;
+    private Location minRegionLocation;
+    private Location maxRegionLocation;
+    
+    private CLClans clanPlugin;
     
     // runtime parameter
     private int tickId = 0;
@@ -68,21 +65,22 @@ public class CapturePoint implements Listener {
     private long winTime = -1;
     
     private UUID currentOwner = null;
+    private UUID previousOwner = null;
+    private UUID previousMessageOwner = null;
     private Map<UUID, Integer> timeMap = new HashMap<>();
     private KeyedBossBar bar;
+    //A list of all clans/players that are in the region
+    private List<UUID> inRegionList = new ArrayList<>();
     
-    public CapturePoint(CLCapture plugin, String name, String id, CapturePointType type, Block chestLocation, Block signLocation) {
+    public CapturePoint(CLCapture plugin, String name, String id, CapturePointType type, Block chestLocation) {
         Bukkit.getPluginManager().registerEvents(this, plugin);
         this.plugin = plugin;
         this.name = name;
         this.id = id;
-        
         this.type = type;
-        
         this.chestLocation = chestLocation.getLocation();
-        this.signLocation = signLocation.getLocation();
-        
-        updateSign();
+        setRegion(this.chestLocation);
+        clanPlugin = (CLClans) Bukkit.getPluginManager().getPlugin("CLClans");
     }
     
     public CapturePoint(CLCapture plugin, String id, ConfigurationSection config) {
@@ -90,20 +88,19 @@ public class CapturePoint implements Listener {
         this.plugin = plugin;
         this.id = id;
         this.name = config.getString("name", id);
-        
         this.type = plugin.getPointType(config.getString("type"));
         this.chestLocation = config.getObject("chest", Location.class);
-        this.signLocation = config.getObject("sign", Location.class);
-        
-        updateSign();
+        setRegion(this.chestLocation);
+        clanPlugin = (CLClans) Bukkit.getPluginManager().getPlugin("CLClans");
+    }
+    
+    private void setRegion(Location chestLocation) {
+        minRegionLocation = new Location(chestLocation.getWorld(), chestLocation.getX() - 2, chestLocation.getY() - 2, chestLocation.getZ() - 2);
+        maxRegionLocation = new Location(chestLocation.getWorld(), chestLocation.getX() + 3, chestLocation.getY() + 5, chestLocation.getZ() + 3);
     }
     
     public Inventory getInventory() {
         return ((Chest) chestLocation.getBlock().getState()).getBlockInventory();
-    }
-    
-    public Sign getSign() {
-        return (Sign) signLocation.getBlock().getState();
     }
     
     @EventHandler(ignoreCancelled = true)
@@ -111,7 +108,7 @@ public class CapturePoint implements Listener {
         if (state == CapturePointState.INACTIVE && isCurrentOwner(event.getPlayer()))
             return;
         
-        if (winTime >= EXCLUSIVE_TIMEOUT || currentOwner == null)
+        if (winTime >= EXCLUSIVE_TIMEOUT)
             return;
         
         if (event.getPlayer().hasPermission(CLCapture.ADMIN_PERMISSION))
@@ -151,40 +148,35 @@ public class CapturePoint implements Listener {
             currentItem.setAmount(currentItem.getAmount() - 1);
     }
     
-    @EventHandler
-    public void onInteract(PlayerInteractEvent event) {
-        if (state == CapturePointState.INACTIVE)
-            return;
-        
-        if (!event.hasBlock() || !event.getClickedBlock().equals(signLocation.getBlock()))
-            return;
-        
-        if (isCurrentOwner(event.getPlayer()))
-            return;
-        
-        currentOwner = convertToOwner(event.getPlayer());
-        timeMap.putIfAbsent(currentOwner, 0);
-        
-        if (getType().isBroadcastStart()) {
-            Bukkit.broadcastMessage(String.format(CAPTURE_MESSAGE, getOwnerName(), this.name));
-            if (plugin.isUsingDiscord())
-                DiscordUtil.queueMessage(DiscordSRV.getPlugin().getDestinationTextChannelForGameChannelName("event"),
-                                         String.format(CAPTURE_MESSAGE_DISCORD, getOwnerName(), this.name));
-        }
-        else
-            event.getPlayer().sendMessage(String.format(CAPTURE_MESSAGE_PRIVATE, this.name));
-    }
-    
+    /**
+     * TODO Not interact event, but if stand above area
+     */
+	/*@EventHandler
+	public void onInteract(PlayerInteractEvent event) {
+		if (state == CapturePointState.INACTIVE)
+			return;
+		if (isCurrentOwner(event.getPlayer()))
+			return;
+
+		currentOwner = convertToOwner(event.getPlayer());
+		timeMap.putIfAbsent(currentOwner, 0);
+
+		if (getType().isBroadcastStart()) {
+			Bukkit.broadcastMessage(String.format(CAPTURE_MESSAGE, getOwnerName(), this.name));
+			if (plugin.isUsingDiscord())
+				DiscordUtil.queueMessage(DiscordSRV.getPlugin().getDestinationTextChannelForGameChannelName("event"),
+						String.format(CAPTURE_MESSAGE_DISCORD, getOwnerName(), this.name));
+		} else
+			event.getPlayer().sendMessage(String.format(CAPTURE_MESSAGE_PRIVATE, this.name));
+	}*/
     @EventHandler(ignoreCancelled = true)
     public void onBlockBreak(BlockBreakEvent event) {
-        if (event.getBlock().getLocation().equals(signLocation) || event.getBlock().getLocation().equals(chestLocation)) {
+        if (event.getBlock().getLocation().equals(chestLocation)) {
             if (event.getPlayer().hasPermission(CLCapture.ADMIN_PERMISSION)) {
                 plugin.removePoint(this);
-                signLocation.getBlock().breakNaturally();
                 chestLocation.getBlock().breakNaturally();
                 event.getPlayer().sendMessage("CapturePoint removed.");
-            }
-            else
+            } else
                 event.setCancelled(true);
         }
     }
@@ -221,23 +213,86 @@ public class CapturePoint implements Listener {
         lastTime = now;
     }
     
+    private boolean areMultipleClans = false;
+    private int scoreMultiplier = 1;
+    
     private void runActive() {
         lastTime = LocalTime.now().toSecondOfDay();
         
-        timeMap.replaceAll((a, b) -> a.equals(currentOwner) ? b + 1 : Math.max(b - 1, 0));
+        //If a player is within the capturepoint region, add them to the list.
+        Bukkit.getOnlinePlayers().forEach(a -> {
+            if (isInRegion(a))
+                inRegionList.add(convertToOwner(a));
+        });
         
-        bar.setProgress(timeMap.getOrDefault(currentOwner, 0) / (double) type.getCaptureTime());
-        bar.setTitle(name + " - " + getOwnerName());
+        //See if there are multiple clans by comparing clans
+        checkAreMultipleClans();
         
-        if (tickId % 20 == 0) {
-            bar.getPlayers().stream().filter(a -> a.getWorld().equals(signLocation.getWorld()))
-               .filter(a -> a.getLocation().distance(signLocation) >= type.getBossbarDistance()).forEach(bar::removePlayer);
-            Bukkit.getOnlinePlayers().stream().filter(a -> a.getWorld().equals(signLocation.getWorld()))
-                  .filter(a -> a.getLocation().distance(signLocation) < type.getBossbarDistance()).forEach(bar::addPlayer);
+        //If there are multiple clans present in the region, don't add to bossbar/map
+        if (!areMultipleClans) {
+            handleSingleClanVariables();
+            handleBossBarAndTime();
         }
         
-        if (timeMap.getOrDefault(currentOwner, 0) >= type.getCaptureTime())
+        if (currentOwner == null)
+            setClanColors(null);
+        
+        //If there is a winner, handle the win and return
+        if (timeMap.getOrDefault(currentOwner, 0) >= type.getCaptureTime()) {
             handleWin();
+            return;
+        }
+        
+        //Set variables back to default values
+        previousOwner = currentOwner;
+        areMultipleClans = false;
+        scoreMultiplier = 1;
+        inRegionList.clear();
+        currentOwner = null;
+    }
+    
+    //If there are people in the region, set the appropriate variables
+    private void handleSingleClanVariables() {
+        if (inRegionList.size() > 0) {
+            currentOwner = inRegionList.get(0);
+            if (previousMessageOwner == null || previousMessageOwner != currentOwner) {
+                previousMessageOwner = currentOwner;
+                announce();
+            }
+            if (currentOwner != previousOwner)
+                setClanColors(clanPlugin.getClanByUUID(currentOwner));
+            scoreMultiplier = inRegionList.size();
+            timeMap.putIfAbsent(currentOwner, 0);
+        }
+    }
+    
+    
+    private void checkAreMultipleClans() {
+        for (UUID a : inRegionList)
+            for (UUID b : inRegionList)
+                if (!a.equals(b)) {
+                    areMultipleClans = true;
+                    break;
+                }
+    }
+    
+    private void handleBossBarAndTime() {
+        //If the owner isn't standing on it, the time will dwindle down
+        timeMap.replaceAll((a, b) -> a.equals(currentOwner) ? b + scoreMultiplier : Math.max(b - scoreMultiplier, 0));
+        //To prevent numbers over 1, check was put in place
+        double progress = timeMap.getOrDefault(currentOwner, 0) / (double) type.getCaptureTime();
+        if (progress <= 1)
+            bar.setProgress(progress);
+        bar.setTitle(name + " - " + getOwnerName());
+        bar.setColor(ClanColorUtil.getBarColor(clanPlugin.getClanByUUID(currentOwner)));
+        
+        //Check if players are within distance to add to the boss bar
+        if (tickId % 20 == 0) {
+            bar.getPlayers().stream().filter(a -> a.getWorld().equals(chestLocation.getWorld()))
+                    .filter(a -> a.getLocation().distance(chestLocation) >= type.getBossbarDistance()).forEach(bar::removePlayer);
+            Bukkit.getOnlinePlayers().stream().filter(a -> a.getWorld().equals(chestLocation.getWorld()))
+                    .filter(a -> a.getLocation().distance(chestLocation) < type.getBossbarDistance()).forEach(bar::addPlayer);
+        }
     }
     
     private void handleWin() {
@@ -246,7 +301,7 @@ public class CapturePoint implements Listener {
         
         if (plugin.isUsingDiscord() && type.isBroadcastStart())
             DiscordUtil.queueMessage(DiscordSRV.getPlugin().getDestinationTextChannelForGameChannelName("event"),
-                                     String.format(EVENT_END_MSG_DISCORD, getOwnerName(), this.name));
+                    String.format(EVENT_END_MSG_DISCORD, getOwnerName(), this.name));
         
         Bukkit.broadcastMessage(String.format(EVENT_END_MSG, getOwnerName(), this.name));
         state = CapturePointState.INACTIVE;
@@ -258,12 +313,17 @@ public class CapturePoint implements Listener {
                 plugin.getLogger().warning("Couldn't add item to chest, is it full?");
         });
         
-        updateSign();
         winTime = 0;
     }
     
     public void startEvent() {
+        previousMessageOwner = null;
+        previousOwner = null;
+        areMultipleClans = false;
+        scoreMultiplier = 1;
+        inRegionList.clear();
         currentOwner = null;
+        setClanColors(null);
         timeMap.clear();
         lootModifier = type.getPlayerModifier().floorEntry(plugin.getMaxPlayerCountLastHour()).getValue();
         
@@ -278,25 +338,19 @@ public class CapturePoint implements Listener {
             Bukkit.broadcastMessage(String.format(EVENT_START_MSG, this.name));
             if (plugin.isUsingDiscord())
                 DiscordUtil.queueMessage(DiscordSRV.getPlugin().getDestinationTextChannelForGameChannelName("event"),
-                                         String.format(EVENT_START_MSG_DISCORD, this.name));
+                        String.format(EVENT_START_MSG_DISCORD, this.name));
         }
         
-        updateSign();
         winTime = 0;
     }
     
-    private void updateSign() {
-        Sign sign = getSign();
-        sign.setLine(0, "[CapPoints]");
-        sign.setLine(1, getName());
-        sign.setLine(2, getOwnerName());
-        if (state == CapturePointState.ACTIVE)
-            sign.setLine(3, "Event Running");
-        else {
-            TimeOfDay time = getNextTime();
-            sign.setLine(3, String.format("Next: %02d:%02d", time.hour, time.minute));
+    private void announce() {
+        if (getType().isBroadcastStart()) {
+            Bukkit.broadcastMessage(String.format(CAPTURE_MESSAGE, getOwnerName(), this.name));
+            if (plugin.isUsingDiscord())
+                DiscordUtil.queueMessage(DiscordSRV.getPlugin().getDestinationTextChannelForGameChannelName("event"),
+                        String.format(CAPTURE_MESSAGE_DISCORD, getOwnerName(), this.name));
         }
-        sign.update();
     }
     
     private String getOwnerName() {
@@ -327,7 +381,7 @@ public class CapturePoint implements Listener {
     }
     
     private UUID convertToOwner(HumanEntity player) {
-        Clan c = plugin.getClanPlugin().getClan(Bukkit.getOfflinePlayer(player.getUniqueId()));
+        Clan c = clanPlugin.getClan(Bukkit.getOfflinePlayer(player.getUniqueId()));
         
         if (c != null)
             return c.getUniqueId();
@@ -345,14 +399,13 @@ public class CapturePoint implements Listener {
     
     public TimeOfDay getNextTime() {
         return type.getTimes().stream().filter(a -> a.toSecondsOfDay() - LocalTime.now().toSecondOfDay() >= 0).min(TimeOfDay::compareTo)
-                   .orElseGet(() -> type.getTimes().stream().min(TimeOfDay::compareTo).get());
+                .orElseGet(() -> type.getTimes().stream().min(TimeOfDay::compareTo).get());
     }
     
     protected void save(FileConfiguration pointsData) {
         ConfigurationSection section = pointsData.createSection(getId());
         section.set("name", name);
         section.set("type", type.getName());
-        section.set("sign", signLocation);
         section.set("chest", chestLocation);
     }
     
@@ -371,16 +424,51 @@ public class CapturePoint implements Listener {
         return chestLocation;
     }
     
-    public Location getSignLocation() {
-        return signLocation;
-    }
-    
     public CapturePointState getState() {
         return state;
     }
     
+    private boolean isInRegion(Player player) {
+        Location location = player.getLocation();
+        double px = location.getX();
+        double py = location.getY();
+        double pz = location.getZ();
+        
+        double minX = minRegionLocation.getX();
+        double minY = minRegionLocation.getY();
+        double minZ = minRegionLocation.getZ();
+        
+        double maxX = maxRegionLocation.getX();
+        double maxY = maxRegionLocation.getY();
+        double maxZ = maxRegionLocation.getZ();
+        
+        return minX <= px && minY <= py && minZ <= pz && px <= maxX && py <= maxY && pz <= maxZ;
+    }
+    
+    private void setClanColors(Clan clan) {
+        double minX = minRegionLocation.getX();
+        double minY = minRegionLocation.getY();
+        double minZ = minRegionLocation.getZ();
+        
+        double maxX = maxRegionLocation.getX();
+        double maxY = maxRegionLocation.getY() + 5;
+        double maxZ = maxRegionLocation.getZ();
+        
+        for (double x = minX; x <= maxX; x++)
+            for (double y = minY; y <= maxY; y++)
+                for (double z = minZ; z <= maxZ; z++) {
+                    Location location = new Location(chestLocation.getWorld(), x, y, z);
+                    if (location.getBlock().getType().toString().contains("CONCRETE"))
+                        location.getBlock().setType(ClanColorUtil.getConcreteColor(clan));
+                    if (location.getBlock().getType().toString().contains("STAINED_GLASS"))
+                        location.getBlock().setType(ClanColorUtil.getGlassColor(clan));
+                    if (location.getBlock().getType().toString().contains("BANNER"))
+                        ClanColorUtil.setClanBanner(clan, location);
+                }
+    }
+    
     public enum CapturePointState {
         INACTIVE,
-        ACTIVE;
+        ACTIVE
     }
 }
