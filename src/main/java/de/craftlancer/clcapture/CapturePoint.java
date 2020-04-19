@@ -54,8 +54,6 @@ public class CapturePoint implements Listener {
     private Location minRegionLocation;
     private Location maxRegionLocation;
     
-    private CLClans clanPlugin;
-    
     // runtime parameter
     private int tickId = 0;
     
@@ -89,7 +87,6 @@ public class CapturePoint implements Listener {
         this.type = plugin.getPointType(config.getString("type"));
         this.chestLocation = config.getObject("chest", Location.class);
         setRegion(this.chestLocation);
-        clanPlugin = (CLClans) Bukkit.getPluginManager().getPlugin("CLClans");
     }
     
     private void setRegion(Location chestLocation) {
@@ -234,7 +231,7 @@ public class CapturePoint implements Listener {
                 announce();
             }
             if (currentOwner != previousOwner)
-                setClanColors(clanPlugin.getClanByUUID(currentOwner));
+                setClanColors(plugin.getClanPlugin().getClanByUUID(currentOwner));
             scoreMultiplier = inRegionList.size();
             timeMap.putIfAbsent(currentOwner, 0);
         }
@@ -259,7 +256,7 @@ public class CapturePoint implements Listener {
         if (progress <= 1)
             bar.setProgress(progress);
         bar.setTitle(name + " - " + getOwnerName());
-        bar.setColor(ClanColorUtil.getBarColor(clanPlugin.getClanByUUID(currentOwner)));
+        bar.setColor(ClanColorUtil.getBarColor(plugin.getClanPlugin().getClanByUUID(currentOwner)));
         
         //Check if players are within distance to add to the boss bar
         if (tickId % 20 == 0) {
@@ -353,7 +350,7 @@ public class CapturePoint implements Listener {
     }
     
     private UUID convertToOwner(HumanEntity player) {
-        Clan c = clanPlugin.getClan(Bukkit.getOfflinePlayer(player.getUniqueId()));
+        Clan c = plugin.getClanPlugin().getClan(Bukkit.getOfflinePlayer(player.getUniqueId()));
         
         if (c != null)
             return c.getUniqueId();

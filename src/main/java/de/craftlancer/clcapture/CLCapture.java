@@ -1,7 +1,6 @@
 package de.craftlancer.clcapture;
 
 import de.craftlancer.clcapture.commands.CaptureCommandHandler;
-import de.craftlancer.clcapture.events.PointAddEvent;
 import de.craftlancer.clclans.CLClans;
 import de.craftlancer.core.IntRingBuffer;
 import de.craftlancer.core.LambdaRunnable;

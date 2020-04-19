@@ -14,9 +14,10 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class PointAddCommand extends CaptureSubCommand {
-    CLCapture plugin = (CLCapture) Bukkit.getPluginManager().getPlugin("CLCapture");
-    public PointAddCommand(CLCapture plugin) {
+    private CLCapture plugin;
+    PointAddCommand(CLCapture plugin) {
         super(CLCapture.ADMIN_PERMISSION, plugin, true);
+        this.plugin = plugin;
     }
     
     @Override
