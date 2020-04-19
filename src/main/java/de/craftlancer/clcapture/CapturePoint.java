@@ -2,11 +2,15 @@ package de.craftlancer.clcapture;
 
 import de.craftlancer.clcapture.CapturePointType.TimeOfDay;
 import de.craftlancer.clcapture.util.ClanColorUtil;
-import de.craftlancer.clclans.CLClans;
 import de.craftlancer.clclans.Clan;
 import github.scarsz.discordsrv.DiscordSRV;
 import github.scarsz.discordsrv.util.DiscordUtil;
-import org.bukkit.*;
+import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
+import org.bukkit.Location;
+import org.bukkit.NamespacedKey;
+import org.bukkit.OfflinePlayer;
+import org.bukkit.Tag;
 import org.bukkit.block.Block;
 import org.bukkit.block.Chest;
 import org.bukkit.block.Container;
@@ -26,16 +30,18 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.util.BoundingBox;
 
 import java.time.LocalTime;
-import java.util.*;
+import java.util.Map;
+import java.util.UUID;
+import java.util.HashMap;
 
 public class CapturePoint implements Listener {
     private static final long EXCLUSIVE_TIMEOUT = 6000;
     
     private static final String MSG_PREFIX = ChatColor.GRAY + "[§4Craft§fCitizen] ";
     
-    private static final String CAPTURE_MESSAGE_PRIVATE = MSG_PREFIX + "§eYou took the capture point %s";
     private static final String CAPTURE_MESSAGE = MSG_PREFIX + "%s §etook the capture point %s";
     private static final String CAPTURE_MESSAGE_DISCORD = ":bannerred:%s took the capture point %s";
     private static final String EVENT_START_MSG = MSG_PREFIX + "§eThe battle for %s begun!";
@@ -51,8 +57,9 @@ public class CapturePoint implements Listener {
     private final String name;
     private final CapturePointType type;
     private final Location chestLocation;
-    private Location minRegionLocation;
-    private Location maxRegionLocation;
+    //private Location minRegionLocation;
+    //private Location maxRegionLocation;
+    private BoundingBox region;
     
     // runtime parameter
     private int tickId = 0;
@@ -76,7 +83,7 @@ public class CapturePoint implements Listener {
         this.id = id;
         this.type = type;
         this.chestLocation = chestLocation.getLocation();
-        setRegion(this.chestLocation);
+        updateRegion();
     }
     
     public CapturePoint(CLCapture plugin, String id, ConfigurationSection config) {
@@ -86,12 +93,19 @@ public class CapturePoint implements Listener {
         this.name = config.getString("name", id);
         this.type = plugin.getPointType(config.getString("type"));
         this.chestLocation = config.getObject("chest", Location.class);
-        setRegion(this.chestLocation);
+        updateRegion();
     }
     
-    private void setRegion(Location chestLocation) {
-        minRegionLocation = new Location(chestLocation.getWorld(), chestLocation.getX() - 2, chestLocation.getY() - 2, chestLocation.getZ() - 2);
-        maxRegionLocation = new Location(chestLocation.getWorld(), chestLocation.getX() + 3, chestLocation.getY() + 5, chestLocation.getZ() + 3);
+    private void updateRegion() {
+        region = new BoundingBox(
+                chestLocation.getX()-2,
+                chestLocation.getY()-2,
+                chestLocation.getZ()-2,
+                chestLocation.getX()+3,
+                chestLocation.getY()+5,
+                chestLocation.getZ()+3);
+        //minRegionLocation = new Location(chestLocation.getWorld(), chestLocation.getX() - 2, chestLocation.getY() - 2, chestLocation.getZ() - 2);
+        //maxRegionLocation = new Location(chestLocation.getWorld(), chestLocation.getX() + 3, chestLocation.getY() + 5, chestLocation.getZ() + 3);
     }
     
     public Inventory getInventory() {
@@ -188,24 +202,31 @@ public class CapturePoint implements Listener {
     }
     
     private void runActive() {
-        boolean areMultipleClans = false;
-        int scoreMultiplier = 1;
-        List<UUID> inRegionList = new ArrayList<>();
+        boolean areMultipleClans;
+        HashMap<UUID, Integer> inRegionMap = new HashMap<>();
         lastTime = LocalTime.now().toSecondOfDay();
         
         //If a player is within the capturepoint region, add them to the list.
         Bukkit.getOnlinePlayers().forEach(a -> {
             if (isInRegion(a))
-                inRegionList.add(convertToOwner(a));
+                inRegionMap.compute(convertToOwner(a), (b, c) -> b == null ? 1 : c + 1);
         });
         
         //See if there are multiple clans by comparing clans
-        areMultipleClans = checkAreMultipleClans(inRegionList, areMultipleClans);
+        areMultipleClans = inRegionMap.size() > 1;
         
         //If there are multiple clans present in the region, don't add to bossbar/map
         if (!areMultipleClans) {
-            scoreMultiplier = handleSingleClanVariables(inRegionList, scoreMultiplier);
-            handleBossBarAndTime(scoreMultiplier);
+            setOwner(inRegionMap);
+            handleBossBarAndTime(inRegionMap.get(currentOwner));
+        }
+    
+        //Check if players are within distance to add to the boss bar
+        if (tickId % 20 == 0) {
+            bar.getPlayers().stream().filter(a -> a.getWorld().equals(chestLocation.getWorld()))
+                    .filter(a -> a.getLocation().distance(chestLocation) >= type.getBossbarDistance()).forEach(bar::removePlayer);
+            Bukkit.getOnlinePlayers().stream().filter(a -> a.getWorld().equals(chestLocation.getWorld()))
+                    .filter(a -> a.getLocation().distance(chestLocation) < type.getBossbarDistance()).forEach(bar::addPlayer);
         }
         
         if (currentOwner == null)
@@ -223,48 +244,26 @@ public class CapturePoint implements Listener {
     }
     
     //If there are people in the region, set the appropriate variables
-    private int handleSingleClanVariables(List<UUID> inRegionList, int scoreMultiplier) {
-        if (inRegionList.size() > 0) {
-            currentOwner = inRegionList.get(0);
+    private void setOwner(Map<UUID, Integer> inRegionMap) {
+        if (inRegionMap.size() == 1) {
+            for (Map.Entry<UUID, Integer> entry : inRegionMap.entrySet())
+                currentOwner = entry.getKey();
             if (previousMessageOwner == null || previousMessageOwner != currentOwner) {
                 previousMessageOwner = currentOwner;
                 announce();
             }
             if (currentOwner != previousOwner)
                 setClanColors(plugin.getClanPlugin().getClanByUUID(currentOwner));
-            scoreMultiplier = inRegionList.size();
             timeMap.putIfAbsent(currentOwner, 0);
         }
-        return scoreMultiplier;
-    }
-    
-    
-    private boolean checkAreMultipleClans(List<UUID> inRegionList, boolean areMultipleClans) {
-        for (UUID a : inRegionList)
-            for (UUID b : inRegionList)
-                if (!a.equals(b)) {
-                    return areMultipleClans;
-                }
-        return false;
     }
     
     private void handleBossBarAndTime(int scoreMultiplier) {
         //If the owner isn't standing on it, the time will dwindle down
         timeMap.replaceAll((a, b) -> a.equals(currentOwner) ? b + scoreMultiplier : Math.max(b - scoreMultiplier, 0));
-        //To prevent numbers over 1, check was put in place
-        double progress = timeMap.getOrDefault(currentOwner, 0) / (double) type.getCaptureTime();
-        if (progress <= 1)
-            bar.setProgress(progress);
+        bar.setProgress(Math.min(timeMap.getOrDefault(currentOwner, 0) / (double) type.getCaptureTime(), 1D));
         bar.setTitle(name + " - " + getOwnerName());
         bar.setColor(ClanColorUtil.getBarColor(plugin.getClanPlugin().getClanByUUID(currentOwner)));
-        
-        //Check if players are within distance to add to the boss bar
-        if (tickId % 20 == 0) {
-            bar.getPlayers().stream().filter(a -> a.getWorld().equals(chestLocation.getWorld()))
-                    .filter(a -> a.getLocation().distance(chestLocation) >= type.getBossbarDistance()).forEach(bar::removePlayer);
-            Bukkit.getOnlinePlayers().stream().filter(a -> a.getWorld().equals(chestLocation.getWorld()))
-                    .filter(a -> a.getLocation().distance(chestLocation) < type.getBossbarDistance()).forEach(bar::addPlayer);
-        }
     }
     
     private void handleWin() {
@@ -399,29 +398,17 @@ public class CapturePoint implements Listener {
     
     private boolean isInRegion(Player player) {
         Location location = player.getLocation();
-        double px = location.getX();
-        double py = location.getY();
-        double pz = location.getZ();
-        
-        double minX = minRegionLocation.getX();
-        double minY = minRegionLocation.getY();
-        double minZ = minRegionLocation.getZ();
-        
-        double maxX = maxRegionLocation.getX();
-        double maxY = maxRegionLocation.getY();
-        double maxZ = maxRegionLocation.getZ();
-        
-        return minX <= px && minY <= py && minZ <= pz && px <= maxX && py <= maxY && pz <= maxZ;
+        return region.contains(location.getX(), location.getY(),location.getZ());
     }
     
     private void setClanColors(Clan clan) {
-        double minX = minRegionLocation.getX();
-        double minY = minRegionLocation.getY();
-        double minZ = minRegionLocation.getZ();
+        double minX = region.getMinX();
+        double minY = region.getMinY();
+        double minZ = region.getMinZ();
         
-        double maxX = maxRegionLocation.getX();
-        double maxY = maxRegionLocation.getY() + 5;
-        double maxZ = maxRegionLocation.getZ();
+        double maxX = region.getMaxX();
+        double maxY = region.getMaxY();
+        double maxZ = region.getMaxZ();
         
         for (double x = minX; x <= maxX; x++)
             for (double y = minY; y <= maxY; y++)

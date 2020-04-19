@@ -166,23 +166,10 @@ public class CLCapture extends JavaPlugin implements Listener {
             }
     }
     
-    public void pointAdd(Player sender, Location chestLocation, String type, String name, String id) {
-        if (!types.containsKey(type))
-            sender.sendMessage("This capture point type does not exist!");
-        else if (name.isEmpty() || id.isEmpty())
-            sender.sendMessage("You must specify a name and an ID!");
-        else if (points.stream().map(CapturePoint::getName).anyMatch(a -> a.equals(name)))
-            sender.sendMessage("A capture point with this name already exists!");
-        else if (points.stream().map(CapturePoint::getId).anyMatch(a -> a.equals(name)))
-            sender.sendMessage("A capture point with this id already exists!");
-        else if (chestLocation.getBlock().getType() != Material.CHEST && chestLocation.getBlock().getType() != Material.TRAPPED_CHEST)
-            sender.sendMessage("You must be looking at a chest!");
-        else {
-            CapturePoint point = new CapturePoint(this, name, id, types.get(type), chestLocation.getBlock());
-            points.add(point);
-            savePoints(true);
-            sender.sendMessage("CapPoint successfully created!");
-        }
+    public boolean addPoint(CapturePoint point) {
+        boolean success = points.add(point);
+        savePoints(true);
+        return success;
     }
     
     public Integer getMaxPlayerCountLastHour() {

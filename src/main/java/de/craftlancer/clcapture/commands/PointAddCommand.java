@@ -1,9 +1,10 @@
 package de.craftlancer.clcapture.commands;
 
 import de.craftlancer.clcapture.CLCapture;
+import de.craftlancer.clcapture.CapturePoint;
 import de.craftlancer.clcapture.CapturePointType;
-import org.bukkit.Bukkit;
-import org.bukkit.block.Block;
+import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -34,8 +35,24 @@ public class PointAddCommand extends CaptureSubCommand {
             return "Please enter an ID!";
         
         Player player = ((Player) sender).getPlayer();
-        Block targettedBlock = player.getTargetBlock(null, 5);
-        plugin.pointAdd(player,targettedBlock.getLocation(),args[2], args[3],args[4]);
+        Location chestLocation = (Location) player.getTargetBlock(null, 5).getLocation();
+        String type = args[2];
+        String name = args[3];
+        String id = args[4];
+        if (!plugin.getTypes().containsKey(type))
+            sender.sendMessage("This capture point type does not exist!");
+        else if (name.isEmpty() || id.isEmpty())
+            sender.sendMessage("You must specify a name and an ID!");
+        else if (plugin.getPoints().stream().map(CapturePoint::getName).anyMatch(a -> a.equals(name)))
+            sender.sendMessage("A capture point with this name already exists!");
+        else if (plugin.getPoints().stream().map(CapturePoint::getId).anyMatch(a -> a.equals(name)))
+            sender.sendMessage("A capture point with this id already exists!");
+        else if (chestLocation.getBlock().getType() != Material.CHEST && chestLocation.getBlock().getType() != Material.TRAPPED_CHEST)
+            sender.sendMessage("You must be looking at a chest!");
+        else {
+            CapturePoint point = new CapturePoint(this.plugin, name, id, plugin.getTypes().get(type), chestLocation.getBlock());
+            plugin.addPoint(point);
+        }
         return null;
     }
     
