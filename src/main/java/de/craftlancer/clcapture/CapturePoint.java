@@ -70,7 +70,6 @@ public class CapturePoint implements Listener {
     private Map<UUID, Integer> timeMap = new HashMap<>();
     private KeyedBossBar bar;
     //A list of all clans/players that are in the region
-    private List<UUID> inRegionList = new ArrayList<>();
     
     public CapturePoint(CLCapture plugin, String name, String id, CapturePointType type, Block chestLocation) {
         Bukkit.getPluginManager().registerEvents(this, plugin);
@@ -213,10 +212,10 @@ public class CapturePoint implements Listener {
         lastTime = now;
     }
     
-    private boolean areMultipleClans = false;
-    private int scoreMultiplier = 1;
-    
     private void runActive() {
+        boolean areMultipleClans = false;
+        int scoreMultiplier = 1;
+        List<UUID> inRegionList = new ArrayList<>();
         lastTime = LocalTime.now().toSecondOfDay();
         
         //If a player is within the capturepoint region, add them to the list.
@@ -226,12 +225,12 @@ public class CapturePoint implements Listener {
         });
         
         //See if there are multiple clans by comparing clans
-        checkAreMultipleClans();
+        areMultipleClans = checkAreMultipleClans(inRegionList, areMultipleClans);
         
         //If there are multiple clans present in the region, don't add to bossbar/map
         if (!areMultipleClans) {
-            handleSingleClanVariables();
-            handleBossBarAndTime();
+            scoreMultiplier = handleSingleClanVariables(inRegionList, scoreMultiplier);
+            handleBossBarAndTime(scoreMultiplier);
         }
         
         if (currentOwner == null)
@@ -245,14 +244,11 @@ public class CapturePoint implements Listener {
         
         //Set variables back to default values
         previousOwner = currentOwner;
-        areMultipleClans = false;
-        scoreMultiplier = 1;
-        inRegionList.clear();
         currentOwner = null;
     }
     
     //If there are people in the region, set the appropriate variables
-    private void handleSingleClanVariables() {
+    private int handleSingleClanVariables(List<UUID> inRegionList, int scoreMultiplier) {
         if (inRegionList.size() > 0) {
             currentOwner = inRegionList.get(0);
             if (previousMessageOwner == null || previousMessageOwner != currentOwner) {
@@ -264,19 +260,20 @@ public class CapturePoint implements Listener {
             scoreMultiplier = inRegionList.size();
             timeMap.putIfAbsent(currentOwner, 0);
         }
+        return scoreMultiplier;
     }
     
     
-    private void checkAreMultipleClans() {
+    private boolean checkAreMultipleClans(List<UUID> inRegionList, boolean areMultipleClans) {
         for (UUID a : inRegionList)
             for (UUID b : inRegionList)
                 if (!a.equals(b)) {
-                    areMultipleClans = true;
-                    break;
+                    return areMultipleClans;
                 }
+        return false;
     }
     
-    private void handleBossBarAndTime() {
+    private void handleBossBarAndTime(int scoreMultiplier) {
         //If the owner isn't standing on it, the time will dwindle down
         timeMap.replaceAll((a, b) -> a.equals(currentOwner) ? b + scoreMultiplier : Math.max(b - scoreMultiplier, 0));
         //To prevent numbers over 1, check was put in place
@@ -319,9 +316,6 @@ public class CapturePoint implements Listener {
     public void startEvent() {
         previousMessageOwner = null;
         previousOwner = null;
-        areMultipleClans = false;
-        scoreMultiplier = 1;
-        inRegionList.clear();
         currentOwner = null;
         setClanColors(null);
         timeMap.clear();
@@ -458,11 +452,11 @@ public class CapturePoint implements Listener {
             for (double y = minY; y <= maxY; y++)
                 for (double z = minZ; z <= maxZ; z++) {
                     Location location = new Location(chestLocation.getWorld(), x, y, z);
-                    if (location.getBlock().getType().toString().contains("CONCRETE"))
+                    if (ClanColorUtil.isConcrete(location.getBlock().getType()))
                         location.getBlock().setType(ClanColorUtil.getConcreteColor(clan));
-                    if (location.getBlock().getType().toString().contains("STAINED_GLASS"))
+                    if (ClanColorUtil.isGlass(location.getBlock().getType()))
                         location.getBlock().setType(ClanColorUtil.getGlassColor(clan));
-                    if (location.getBlock().getType().toString().contains("BANNER"))
+                    if (Tag.BANNERS.isTagged(location.getBlock().getType()))
                         ClanColorUtil.setClanBanner(clan, location);
                 }
     }

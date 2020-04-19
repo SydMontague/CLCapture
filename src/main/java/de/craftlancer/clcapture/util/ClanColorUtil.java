@@ -13,6 +13,54 @@ import org.bukkit.inventory.meta.BannerMeta;
 
 public class ClanColorUtil {
     
+    public static boolean isConcrete(Material material) {
+        switch (material) {
+            case BLACK_CONCRETE:
+            case CYAN_CONCRETE:
+            case BLUE_CONCRETE:
+            case RED_CONCRETE:
+            case PINK_CONCRETE:
+            case BROWN_CONCRETE:
+            case GRAY_CONCRETE:
+            case GREEN_CONCRETE:
+            case LIGHT_BLUE_CONCRETE:
+            case LIGHT_GRAY_CONCRETE:
+            case LIME_CONCRETE:
+            case MAGENTA_CONCRETE:
+            case ORANGE_CONCRETE:
+            case PURPLE_CONCRETE:
+            case WHITE_CONCRETE:
+            case YELLOW_CONCRETE:
+                return true;
+            default:
+                return false;
+        }
+    }
+    
+    public static boolean isGlass(Material material) {
+        switch (material) {
+            case BLACK_STAINED_GLASS:
+            case CYAN_STAINED_GLASS:
+            case BLUE_STAINED_GLASS:
+            case RED_STAINED_GLASS:
+            case PINK_STAINED_GLASS:
+            case BROWN_STAINED_GLASS:
+            case GRAY_STAINED_GLASS:
+            case GREEN_STAINED_GLASS:
+            case LIGHT_BLUE_STAINED_GLASS:
+            case LIGHT_GRAY_STAINED_GLASS:
+            case LIME_STAINED_GLASS:
+            case MAGENTA_STAINED_GLASS:
+            case ORANGE_STAINED_GLASS:
+            case PURPLE_STAINED_GLASS:
+            case WHITE_STAINED_GLASS:
+            case YELLOW_STAINED_GLASS:
+                return true;
+            default:
+                return false;
+        }
+    }
+    
     public static Material getConcreteColor(Clan clan) {
         if (clan == null)
             return Material.WHITE_CONCRETE;

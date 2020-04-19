@@ -11,6 +11,7 @@ import org.bukkit.Material;
 import org.bukkit.boss.KeyedBossBar;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
@@ -166,28 +167,22 @@ public class CLCapture extends JavaPlugin implements Listener {
             }
     }
     
-    @EventHandler
-    public void onPointAddCommand(PointAddEvent event) {
-        Location chestLocation = event.getChestLocation();
-        String type = event.getType();
-        String name = event.getName();
-        String id = event.getId();
-        
+    public void pointAdd(Player sender, Location chestLocation, String type, String name, String id) {
         if (!types.containsKey(type))
-            event.getPlayer().sendMessage("This capture point type does not exist!");
+            sender.sendMessage("This capture point type does not exist!");
         else if (name.isEmpty() || id.isEmpty())
-            event.getPlayer().sendMessage("You must specify a name and an ID!");
+            sender.sendMessage("You must specify a name and an ID!");
         else if (points.stream().map(CapturePoint::getName).anyMatch(a -> a.equals(name)))
-            event.getPlayer().sendMessage("A capture point with this name already exists!");
+            sender.sendMessage("A capture point with this name already exists!");
         else if (points.stream().map(CapturePoint::getId).anyMatch(a -> a.equals(name)))
-            event.getPlayer().sendMessage("A capture point with this id already exists!");
+            sender.sendMessage("A capture point with this id already exists!");
         else if (chestLocation.getBlock().getType() != Material.CHEST && chestLocation.getBlock().getType() != Material.TRAPPED_CHEST)
-            event.getPlayer().sendMessage("You must be looking at a chest!");
+            sender.sendMessage("You must be looking at a chest!");
         else {
             CapturePoint point = new CapturePoint(this, name, id, types.get(type), chestLocation.getBlock());
             points.add(point);
             savePoints(true);
-            event.getPlayer().sendMessage("CapPoint successfully created!");
+            sender.sendMessage("CapPoint successfully created!");
         }
     }
     

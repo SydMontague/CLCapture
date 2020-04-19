@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class PointAddCommand extends CaptureSubCommand {
+    CLCapture plugin = (CLCapture) Bukkit.getPluginManager().getPlugin("CLCapture");
     public PointAddCommand(CLCapture plugin) {
         super(CLCapture.ADMIN_PERMISSION, plugin, true);
     }
@@ -34,7 +35,7 @@ public class PointAddCommand extends CaptureSubCommand {
         
         Player player = ((Player) sender).getPlayer();
         Block targettedBlock = player.getTargetBlock(null, 5);
-        Bukkit.getPluginManager().callEvent(new PointAddEvent(player, targettedBlock.getLocation(), args[2], args[3], args[4]));
+        plugin.pointAdd(player,targettedBlock.getLocation(),args[2], args[3],args[4]);
         return null;
     }
     
