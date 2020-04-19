@@ -2,7 +2,6 @@ package de.craftlancer.clcapture.commands;
 
 import de.craftlancer.clcapture.CLCapture;
 import de.craftlancer.clcapture.CapturePointType;
-import de.craftlancer.clcapture.events.PointAddEvent;
 import org.bukkit.Bukkit;
 import org.bukkit.block.Block;
 import org.bukkit.command.Command;
