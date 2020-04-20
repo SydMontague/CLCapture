@@ -2,6 +2,7 @@ package de.craftlancer.clcapture.util;
 
 import de.craftlancer.clclans.Clan;
 import org.bukkit.ChatColor;
+import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Banner;
@@ -96,6 +97,45 @@ public class ClanColorUtil {
                 return Material.MAGENTA_CONCRETE;
             default:
                 return Material.WHITE_CONCRETE;
+        }
+    }
+    
+    public static Color getBukkitColor(Clan clan) {
+        if (clan == null)
+            return Color.WHITE;
+        switch (clan.getColor()) {
+            case RED:
+                return Color.fromRGB(255, 85, 85);
+            case DARK_RED:
+                return Color.fromRGB(170, 0, 0);
+            case BLUE:
+                return Color.BLUE;
+            case BLACK:
+                return Color.BLACK;
+            case YELLOW:
+                return Color.YELLOW;
+            case GREEN:
+                return Color.LIME;
+            case GRAY:
+                return Color.SILVER;
+            case DARK_GREEN:
+                return Color.GREEN;
+            case AQUA:
+                return Color.AQUA;
+            case LIGHT_PURPLE:
+                return Color.FUCHSIA;
+            case DARK_PURPLE:
+                return Color.PURPLE;
+            case DARK_GRAY:
+                return Color.GRAY;
+            case DARK_BLUE:
+                return Color.NAVY;
+            case DARK_AQUA:
+                return Color.fromRGB(0, 170, 170);
+            case GOLD:
+                return Color.ORANGE;
+            default:
+                return Color.WHITE;
         }
     }
     

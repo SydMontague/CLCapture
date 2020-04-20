@@ -7,10 +7,13 @@ import github.scarsz.discordsrv.DiscordSRV;
 import github.scarsz.discordsrv.util.DiscordUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.Particle;
 import org.bukkit.Tag;
+import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.Chest;
 import org.bukkit.block.Container;
@@ -74,6 +77,8 @@ public class CapturePoint implements Listener {
     private UUID previousMessageOwner = null;
     private Map<UUID, Integer> timeMap = new HashMap<>();
     private KeyedBossBar bar;
+    
+    private int lastRadius = 0;
     //A list of all clans/players that are in the region
     
     public CapturePoint(CLCapture plugin, String name, String id, CapturePointType type, Block chestLocation) {
@@ -220,6 +225,7 @@ public class CapturePoint implements Listener {
         timeMap.replaceAll((a, b) -> a.equals(currentOwner) ? b + scoreMultiplier : Math.max(b - scoreMultiplier, 0));
         bar.setProgress(Math.min(timeMap.getOrDefault(currentOwner, 0) / (double) type.getCaptureTime(), 1D));
         bar.setTitle(name + " - " + getOwnerName());
+        createParticleEffects();
         bar.setColor(ClanColorUtil.getBarColor(plugin.getClanPlugin().getClanByUUID(currentOwner)));
     
         //Check if players are within distance to add to the boss bar
@@ -242,6 +248,32 @@ public class CapturePoint implements Listener {
         //Set variables back to default values
         previousOwner = currentOwner;
         currentOwner = null;
+    }
+    
+    private void createParticleEffects() {
+        if (tickId % 8 != 0 || currentOwner == null)
+            return;
+        int a;
+        if (lastRadius == 3)
+            a = 1;
+        else
+            a = lastRadius + 1;
+        
+        World world = chestLocation.getWorld();
+        Particle.DustOptions particle;
+        if (plugin.getClanPlugin().getClanByUUID(currentOwner) == null)
+            particle = new Particle.DustOptions(Color.WHITE,1F);
+        else
+            particle = new Particle.DustOptions(ClanColorUtil.getBukkitColor(plugin.getClanPlugin().getClanByUUID(currentOwner)), 1);
+        
+        double increment = (2 * Math.PI) / 150;
+        for (int i = 0; i < 150; i++) {
+            double angle = i * increment;
+            double x = (chestLocation.getX() + 0.5) + (a * Math.cos(angle));
+            double z = (chestLocation.getZ() + 0.5) + (a * Math.sin(angle));
+            world.spawnParticle(Particle.REDSTONE, new Location(world, x, chestLocation.getY(), z), 1, particle);
+        }
+        lastRadius = a;
     }
     
     //If there are people in the region, set the appropriate variables
