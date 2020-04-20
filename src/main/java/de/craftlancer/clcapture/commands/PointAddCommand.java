@@ -53,7 +53,7 @@ public class PointAddCommand extends CaptureSubCommand {
             CapturePoint point = new CapturePoint(this.plugin, name, id, plugin.getTypes().get(type), chestLocation.getBlock());
             plugin.addPoint(point);
         }
-        return null;
+        return "You have successfully added a point!";
     }
     
     @Override
