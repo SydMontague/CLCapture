@@ -33,7 +33,7 @@ public class PointTPCommand extends CaptureSubCommand {
         if (!point.isPresent())
             return "This point does not exist.";
         
-        if (((Player) sender).teleport(point.get().getSignLocation()))
+        if (((Player) sender).teleport(point.get().getChestLoction()))
             return null;
         else
             return "Something went wrong while teleporting.";
