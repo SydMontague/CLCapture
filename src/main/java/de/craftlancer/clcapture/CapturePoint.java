@@ -222,7 +222,10 @@ public class CapturePoint implements Listener {
         int finalScoreMultiplier = getMultiplier(inRegionMap);
         timeMap.replaceAll((a, b) -> a.equals(currentOwner) ? b + finalScoreMultiplier : Math.max(b - finalScoreMultiplier, 0));
         bar.setProgress(Math.min(timeMap.getOrDefault(currentOwner, 0) / (double) type.getCaptureTime(), 1D));
-        bar.setTitle(name + " - " + getOwnerName(amountOfPlayersInRegion) + " - (" + finalScoreMultiplier + ")");
+        if (currentOwner == null && amountOfPlayersInRegion > 0)
+            bar.setTitle(name + " - Contested - (" + finalScoreMultiplier + ")");
+        else
+            bar.setTitle(name + " - " + getOwnerName() + " - (" + finalScoreMultiplier + ")");
         createParticleEffects();
         bar.setColor(ClanColorUtil.getBarColor(plugin.getClanPlugin().getClanByUUID(currentOwner)));
     
@@ -323,9 +326,9 @@ public class CapturePoint implements Listener {
         
         if (plugin.isUsingDiscord() && type.isBroadcastStart())
             DiscordUtil.queueMessage(DiscordSRV.getPlugin().getDestinationTextChannelForGameChannelName("event"),
-                    String.format(EVENT_END_MSG_DISCORD, getOwnerName(1), this.name));
+                    String.format(EVENT_END_MSG_DISCORD, getOwnerName(), this.name));
         
-        Bukkit.broadcastMessage(String.format(EVENT_END_MSG, getOwnerName(1), this.name));
+        Bukkit.broadcastMessage(String.format(EVENT_END_MSG, getOwnerName(), this.name));
         state = CapturePointState.INACTIVE;
         
         type.getItems().forEach(a -> {
@@ -365,20 +368,17 @@ public class CapturePoint implements Listener {
     
     private void announce() {
         if (getType().isBroadcastStart()) {
-            Bukkit.broadcastMessage(String.format(CAPTURE_MESSAGE, getOwnerName(1), this.name));
+            Bukkit.broadcastMessage(String.format(CAPTURE_MESSAGE, getOwnerName(), this.name));
             if (plugin.isUsingDiscord())
                 DiscordUtil.queueMessage(DiscordSRV.getPlugin().getDestinationTextChannelForGameChannelName("event"),
-                        String.format(CAPTURE_MESSAGE_DISCORD, getOwnerName(1), this.name));
+                        String.format(CAPTURE_MESSAGE_DISCORD, getOwnerName(), this.name));
         }
     }
     
     //Size is only for the boss bar calling this method, use int 1 normally.
-    private String getOwnerName(int i) {
+    private String getOwnerName() {
         if (currentOwner == null) {
-            if (i > 0)
-                return "Contested";
-            else
-                return "Uncaptured";
+            return "Uncaptured";
         }
         Clan c = plugin.getClanPlugin().getClanByUUID(currentOwner);
         if (c != null)
