@@ -208,27 +208,26 @@ public class CapturePoint implements Listener {
     }
     
     private void runActive() {
+        /** Needs to:
+         * 1: get all players in the area and assign them a map of their clan/UUID and amount of players from each UUID
+         * 2: If there are no players, currentOwner = null, if there is 1 clan, currentOwner = that clan, if there are multiple clans,
+         *    current owner = that clan (if it has multiple people) - all others. If the amounts are the same, make the point contested
+         */
         HashMap<UUID, Integer> inRegionMap = new HashMap<>();
         lastTime = LocalTime.now().toSecondOfDay();
         
-        //If a player is within the capturepoint region, add them to the list.
-        Bukkit.getOnlinePlayers().forEach(a -> {
+        //If a player is within the capturepoint region, add them to the map
+        for (Player a : Bukkit.getOnlinePlayers())
             if (isInRegion(a))
                 inRegionMap.compute(convertToOwner(a), (b, c) -> inRegionMap.containsKey(b) ? c + 1 : 1);
-        });
-        
-        //See if there are multiple clans by comparing clans
-        
-        //If there are multiple clans present in the region, don't add to bossbar/map
-        int scoreMultiplier;
-        int tempInt = setOwner(inRegionMap);
-        if (tempInt == -1)
-            scoreMultiplier = 1;
-        else
-            scoreMultiplier = tempInt;
-        timeMap.replaceAll((a, b) -> a.equals(currentOwner) ? b + scoreMultiplier : Math.max(b - scoreMultiplier, 0));
+            
+        int amountOfPlayersInRegion = inRegionMap.size();
+        setOwner(inRegionMap);
+    
+        int finalScoreMultiplier = getMultiplier(inRegionMap);
+        timeMap.replaceAll((a, b) -> a.equals(currentOwner) ? b + finalScoreMultiplier : Math.max(b - finalScoreMultiplier, 0));
         bar.setProgress(Math.min(timeMap.getOrDefault(currentOwner, 0) / (double) type.getCaptureTime(), 1D));
-        bar.setTitle(name + " - " + getOwnerName(tempInt) + " - (" + scoreMultiplier + ")");
+        bar.setTitle(name + " - " + getOwnerName(amountOfPlayersInRegion) + " - (" + finalScoreMultiplier + ")");
         createParticleEffects();
         bar.setColor(ClanColorUtil.getBarColor(plugin.getClanPlugin().getClanByUUID(currentOwner)));
     
@@ -252,6 +251,21 @@ public class CapturePoint implements Listener {
         //Set variables back to default values
         previousOwner = currentOwner;
         currentOwner = null;
+    }
+    
+    private int getMultiplier(Map<UUID, Integer> inRegionMap) {
+        if (currentOwner == null)
+            return 1;
+        else if (inRegionMap.size() == 1)
+            return inRegionMap.get(currentOwner);
+        else if (inRegionMap.size() > 1) {
+            int maxSize = inRegionMap.get(currentOwner);
+            for (Map.Entry<UUID, Integer> entry : inRegionMap.entrySet())
+                if (entry.getKey() != currentOwner)
+                    maxSize -= entry.getValue();
+            return Math.max(maxSize, 1);
+        }
+        return 1;
     }
     
     private void createParticleEffects() {
@@ -281,10 +295,11 @@ public class CapturePoint implements Listener {
     }
     
     //If there are people in the region, set the appropriate variables
-    private int setOwner(Map<UUID, Integer> inRegionMap) {
+    private void setOwner(Map<UUID, Integer> inRegionMap) {
         if (inRegionMap.size() == 0) {
             currentOwner = null;
-            return 1;
+        } else if (inRegionMap.size() == 1) {
+            currentOwner = (UUID) inRegionMap.keySet().toArray()[0];
         } else {
             Map.Entry<UUID, Integer> maxEntry = inRegionMap.entrySet().stream().max(Comparator.comparing(Map.Entry::getValue)).get();
             for (Map.Entry<UUID, Integer> entry : inRegionMap.entrySet())
@@ -296,6 +311,7 @@ public class CapturePoint implements Listener {
                 currentOwner = null;
             else
                 currentOwner = maxEntry.getKey();
+        }
             if (previousMessageOwner != currentOwner && currentOwner != null) {
                 previousMessageOwner = currentOwner;
                 announce();
@@ -304,18 +320,6 @@ public class CapturePoint implements Listener {
                 setClanColors(plugin.getClanPlugin().getClanByUUID(currentOwner));
             if (currentOwner != null)
                 timeMap.putIfAbsent(currentOwner, 0);
-            if (currentOwner != null && inRegionMap.size() == 1)
-                return maxEntry.getValue();
-            else if (currentOwner != null && inRegionMap.size() > 1) {
-                int secondGreatestValue = 0;
-                for (Map.Entry<UUID, Integer> entry : inRegionMap.entrySet())
-                    if (entry.getKey() != maxEntry.getKey() && entry.getValue() > secondGreatestValue)
-                        secondGreatestValue = entry.getValue();
-                    return maxEntry.getValue()-secondGreatestValue;
-            }
-            previousOwner = currentOwner;
-        }
-        return -1;
     }
     
     private void handleWin() {
@@ -374,13 +378,13 @@ public class CapturePoint implements Listener {
     }
     
     //Size is only for the boss bar calling this method, use int 1 normally.
-    private String getOwnerName(int size) {
-        if (currentOwner == null)
-            if (size == -1)
-                return "Contended";
+    private String getOwnerName(int i) {
+        if (currentOwner == null) {
+            if (i > 0)
+                return "Contested";
             else
                 return "Uncaptured";
-        
+        }
         Clan c = plugin.getClanPlugin().getClanByUUID(currentOwner);
         if (c != null)
             return c.getName();
