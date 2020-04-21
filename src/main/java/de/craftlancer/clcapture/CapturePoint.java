@@ -208,11 +208,6 @@ public class CapturePoint implements Listener {
     }
     
     private void runActive() {
-        /** Needs to:
-         * 1: get all players in the area and assign them a map of their clan/UUID and amount of players from each UUID
-         * 2: If there are no players, currentOwner = null, if there is 1 clan, currentOwner = that clan, if there are multiple clans,
-         *    current owner = that clan (if it has multiple people) - all others. If the amounts are the same, make the point contested
-         */
         HashMap<UUID, Integer> inRegionMap = new HashMap<>();
         lastTime = LocalTime.now().toSecondOfDay();
         
