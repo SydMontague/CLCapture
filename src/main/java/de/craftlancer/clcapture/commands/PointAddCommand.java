@@ -35,7 +35,7 @@ public class PointAddCommand extends CaptureSubCommand {
             return "Please enter an ID!";
         
         Player player = ((Player) sender).getPlayer();
-        Location chestLocation = (Location) player.getTargetBlock(null, 5).getLocation();
+        Location chestLocation = player.getTargetBlock(null, 5).getLocation();
         String type = args[2];
         String name = args[3];
         String id = args[4];
@@ -53,7 +53,7 @@ public class PointAddCommand extends CaptureSubCommand {
             CapturePoint point = new CapturePoint(this.plugin, name, id, plugin.getTypes().get(type), chestLocation.getBlock());
             plugin.addPoint(point);
         }
-        return null;
+        return "You have successfully added a point!";
     }
     
     @Override
