@@ -38,8 +38,10 @@ import org.bukkit.util.BoundingBox;
 import java.time.LocalTime;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 public class CapturePoint implements Listener {
     private static final long EXCLUSIVE_TIMEOUT = 6000;
@@ -61,12 +63,10 @@ public class CapturePoint implements Listener {
     private final String name;
     private final CapturePointType type;
     private final Location chestLocation;
-    //private Location minRegionLocation;
-    //private Location maxRegionLocation;
-    private BoundingBox region;
     
     // runtime parameter
     private int tickId = 0;
+    private BoundingBox region;
     
     private CapturePointState state = CapturePointState.INACTIVE;
     private float lootModifier = 1.0f;
@@ -110,8 +110,6 @@ public class CapturePoint implements Listener {
                 chestLocation.getX()+3,
                 chestLocation.getY()+5,
                 chestLocation.getZ()+3);
-        //minRegionLocation = new Location(chestLocation.getWorld(), chestLocation.getX() - 2, chestLocation.getY() - 2, chestLocation.getZ() - 2);
-        //maxRegionLocation = new Location(chestLocation.getWorld(), chestLocation.getX() + 3, chestLocation.getY() + 5, chestLocation.getZ() + 3);
     }
     
     public Inventory getInventory() {
@@ -294,30 +292,29 @@ public class CapturePoint implements Listener {
     
     //If there are people in the region, set the appropriate variables
     private void setOwner(Map<UUID, Integer> inRegionMap) {
-        if (inRegionMap.size() == 0) {
+        if (inRegionMap.size() == 0)
             currentOwner = null;
-        } else if (inRegionMap.size() == 1) {
+        else if (inRegionMap.size() == 1)
             currentOwner = (UUID) inRegionMap.keySet().toArray()[0];
-        } else {
-            Map.Entry<UUID, Integer> maxEntry = inRegionMap.entrySet().stream().max(Comparator.comparing(Map.Entry::getValue)).get();
-            for (Map.Entry<UUID, Integer> entry : inRegionMap.entrySet())
-                if (entry.getKey() != maxEntry.getKey() && maxEntry.getValue().equals(entry.getValue())) {
-                    inRegionMap.clear();
-                    break;
-                }
-            if (inRegionMap.size() == 0)
+        else {
+            List<Map.Entry<UUID, Integer>> entries = inRegionMap.entrySet().stream().sorted(Comparator.comparingInt(Map.Entry::getValue)).limit(2).collect(Collectors.toList());
+            
+            if(entries.size() > 1 && entries.get(0).getValue().equals(entries.get(1).getValue()))
                 currentOwner = null;
+            else if(!entries.isEmpty())
+                currentOwner = entries.get(0).getKey();
             else
-                currentOwner = maxEntry.getKey();
+                plugin.getLogger().warning("Unexpected error while trying to set cap point owner, this shouldn't happen.");
         }
-            if (previousMessageOwner != currentOwner && currentOwner != null) {
-                previousMessageOwner = currentOwner;
-                announce();
-            }
-            if (currentOwner != previousOwner)
-                setClanColors(plugin.getClanPlugin().getClanByUUID(currentOwner));
-            if (currentOwner != null)
-                timeMap.putIfAbsent(currentOwner, 0);
+        
+        if (previousMessageOwner != currentOwner && currentOwner != null) {
+            previousMessageOwner = currentOwner;
+            announce();
+        }
+        if (currentOwner != previousOwner)
+            setClanColors(plugin.getClanPlugin().getClanByUUID(currentOwner));
+        if (currentOwner != null)
+            timeMap.putIfAbsent(currentOwner, 0);
     }
     
     private void handleWin() {
