@@ -30,12 +30,12 @@ public class TypeItemRemoveCommand extends CaptureSubCommand {
         if (!type.isPresent())
             return "This type does not exist.";
 
-        int time = Integer.parseInt(args[3]);
+        int item = Integer.parseInt(args[3]);
         
-        if(!type.get().getPlayerModifier().containsKey(time))
+        if(item >= type.get().getItems().size())
             return "No item with this id exists.";
 
-        type.get().removeItem(time);
+        type.get().removeItem(item);
         return "Item removed";
     }
 
