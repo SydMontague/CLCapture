@@ -297,7 +297,7 @@ public class CapturePoint implements Listener {
         else if (inRegionMap.size() == 1)
             currentOwner = (UUID) inRegionMap.keySet().toArray()[0];
         else {
-            List<Map.Entry<UUID, Integer>> entries = inRegionMap.entrySet().stream().sorted(Comparator.comparingInt(Map.Entry::getValue)).limit(2).collect(Collectors.toList());
+            List<Map.Entry<UUID, Integer>> entries = inRegionMap.entrySet().stream().sorted(Comparator.comparingInt(Map.Entry<UUID, Integer>::getValue).reversed()).limit(2).collect(Collectors.toList());
             
             if(entries.size() > 1 && entries.get(0).getValue().equals(entries.get(1).getValue()))
                 currentOwner = null;
