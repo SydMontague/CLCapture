@@ -219,8 +219,8 @@ public class CapturePoint implements Listener {
         int amountOfPlayersInRegion = inRegionMap.size();
         setOwner(inRegionMap);
     
-        int finalScoreMultiplier = getMultiplier(inRegionMap);
-        timeMap.replaceAll((a, b) -> a.equals(currentOwner) ? b + 30 : Math.max(b - finalScoreMultiplier, 0));
+        int scoreMultiplier = getMultiplier(inRegionMap);
+        timeMap.replaceAll((a, b) -> a.equals(currentOwner) ? b + scoreMultiplier : Math.max(b - scoreMultiplier, 0));
         bar.setProgress(Math.min(timeMap.getOrDefault(currentOwner, 0) / (double) type.getCaptureTime(), 1D));
         Clan clan = plugin.getClanPlugin().getClanByUUID(currentOwner);
         if (currentOwner == null && amountOfPlayersInRegion > 0)
@@ -228,14 +228,14 @@ public class CapturePoint implements Listener {
                     + ChatColor.YELLOW + " - "
                     + ChatColor.GOLD + "Contested"
                     + ChatColor.YELLOW + " - ("
-                    + ChatColor.GOLD + finalScoreMultiplier
+                    + ChatColor.GOLD + scoreMultiplier
                     + ChatColor.YELLOW + ")");
         else
             bar.setTitle(ChatColor.GOLD + name
                     + ChatColor.YELLOW + " - "
                     + (clan == null ? ChatColor.WHITE : clan.getColor()) + getOwnerName()
                     + ChatColor.YELLOW + " - ("
-                    + ChatColor.GOLD + finalScoreMultiplier
+                    + ChatColor.GOLD + scoreMultiplier
                     + ChatColor.YELLOW + ")");
         createParticleEffects();
         bar.setColor(ClanColorUtil.getBarColor(clan));
