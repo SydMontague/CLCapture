@@ -183,7 +183,7 @@ public class CapturePoint implements Listener {
                 runActive();
                 break;
             case CAPTURED:
-                handleCapturedBossBar();
+                runCaptured();
                 break;
             default:
                 break;
@@ -348,17 +348,12 @@ public class CapturePoint implements Listener {
         winTime = 0;
     }
     
-    private void handleCapturedBossBar() {
+    private void runCaptured() {
         if (tickId % 20 == 0) {
             bar.getPlayers().stream().filter(a -> a.getWorld().equals(chestLocation.getWorld()))
                     .filter(a -> a.getLocation().distance(chestLocation) >= type.getBossbarDistance()).forEach(bar::removePlayer);
             Bukkit.getOnlinePlayers().stream().filter(a -> a.getWorld().equals(chestLocation.getWorld()))
                     .filter(a -> a.getLocation().distance(chestLocation) < type.getBossbarDistance()).forEach(bar::addPlayer);
-        }
-        
-        if (state != CapturePointState.CAPTURED) {
-            state = CapturePointState.INACTIVE;
-            return;
         }
     
         winTime++;
@@ -521,6 +516,6 @@ public class CapturePoint implements Listener {
     public enum CapturePointState {
         INACTIVE,
         ACTIVE,
-		CAPTURED
+        CAPTURED
     }
 }
