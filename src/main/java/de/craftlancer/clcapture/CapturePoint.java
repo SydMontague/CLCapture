@@ -118,7 +118,7 @@ public class CapturePoint implements Listener {
     
     @EventHandler(ignoreCancelled = true)
     public void onChestInteract(PlayerInteractEvent event) {
-        if (state == CapturePointState.INACTIVE && isCurrentOwner(event.getPlayer()))
+        if ((state == CapturePointState.INACTIVE || state == CapturePointState.CAPTURED) && isCurrentOwner(event.getPlayer()))
             return;
         
         if (winTime >= EXCLUSIVE_TIMEOUT)
@@ -129,7 +129,7 @@ public class CapturePoint implements Listener {
         
         if (getChestLoction().equals(event.getClickedBlock().getLocation())) {
             event.setCancelled(true);
-            event.getPlayer().sendMessage(CANT_OPEN_MSG);
+            event.getPlayer().sendMessage(MSG_PREFIX + "§eYou cannot open this chest for another §6" + (EXCLUSIVE_TIMEOUT/20-winTime/20) + " seconds§e!");
         }
     }
     
@@ -182,6 +182,9 @@ public class CapturePoint implements Listener {
             case ACTIVE:
                 runActive();
                 break;
+            case CAPTURED:
+                runCaptured();
+                break;
             default:
                 break;
         }
@@ -190,7 +193,6 @@ public class CapturePoint implements Listener {
     }
     
     private void runInactive() {
-        winTime++;
         
         if (currentOwner != null && winTime >= EXCLUSIVE_TIMEOUT)
             currentOwner = null;
@@ -217,15 +219,26 @@ public class CapturePoint implements Listener {
         int amountOfPlayersInRegion = inRegionMap.size();
         setOwner(inRegionMap);
     
-        int finalScoreMultiplier = getMultiplier(inRegionMap);
-        timeMap.replaceAll((a, b) -> a.equals(currentOwner) ? b + finalScoreMultiplier : Math.max(b - finalScoreMultiplier, 0));
+        int scoreMultiplier = getMultiplier(inRegionMap);
+        timeMap.replaceAll((a, b) -> a.equals(currentOwner) ? b + scoreMultiplier : Math.max(b - scoreMultiplier, 0));
         bar.setProgress(Math.min(timeMap.getOrDefault(currentOwner, 0) / (double) type.getCaptureTime(), 1D));
+        Clan clan = plugin.getClanPlugin().getClanByUUID(currentOwner);
         if (currentOwner == null && amountOfPlayersInRegion > 0)
-            bar.setTitle(name + " - Contested - (" + finalScoreMultiplier + ")");
+            bar.setTitle(ChatColor.GOLD + name
+                    + ChatColor.YELLOW + " - "
+                    + ChatColor.GOLD + "Contested"
+                    + ChatColor.YELLOW + " - ("
+                    + ChatColor.GOLD + scoreMultiplier
+                    + ChatColor.YELLOW + ")");
         else
-            bar.setTitle(name + " - " + getOwnerName() + " - (" + finalScoreMultiplier + ")");
+            bar.setTitle(ChatColor.GOLD + name
+                    + ChatColor.YELLOW + " - "
+                    + (clan == null ? ChatColor.WHITE : clan.getColor()) + getOwnerName()
+                    + ChatColor.YELLOW + " - ("
+                    + ChatColor.GOLD + scoreMultiplier
+                    + ChatColor.YELLOW + ")");
         createParticleEffects();
-        bar.setColor(ClanColorUtil.getBarColor(plugin.getClanPlugin().getClanByUUID(currentOwner)));
+        bar.setColor(ClanColorUtil.getBarColor(clan));
     
         //Check if players are within distance to add to the boss bar
         if (tickId % 20 == 0) {
@@ -318,15 +331,12 @@ public class CapturePoint implements Listener {
     }
     
     private void handleWin() {
-        bar.removeAll();
-        Bukkit.removeBossBar(new NamespacedKey(plugin, id));
-        
         if (plugin.isUsingDiscord() && type.isBroadcastStart())
             DiscordUtil.queueMessage(DiscordSRV.getPlugin().getDestinationTextChannelForGameChannelName("event"),
                     String.format(EVENT_END_MSG_DISCORD, getOwnerName(), this.name));
         
         Bukkit.broadcastMessage(String.format(EVENT_END_MSG, getOwnerName(), this.name));
-        state = CapturePointState.INACTIVE;
+        state = CapturePointState.CAPTURED;
         
         type.getItems().forEach(a -> {
             ItemStack stack = a.clone();
@@ -336,6 +346,35 @@ public class CapturePoint implements Listener {
         });
         
         winTime = 0;
+    }
+    
+    private void runCaptured() {
+        if (tickId % 20 == 0) {
+            bar.getPlayers().stream().filter(a -> a.getWorld().equals(chestLocation.getWorld()))
+                    .filter(a -> a.getLocation().distance(chestLocation) >= type.getBossbarDistance()).forEach(bar::removePlayer);
+            Bukkit.getOnlinePlayers().stream().filter(a -> a.getWorld().equals(chestLocation.getWorld()))
+                    .filter(a -> a.getLocation().distance(chestLocation) < type.getBossbarDistance()).forEach(bar::addPlayer);
+        }
+    
+        winTime++;
+        
+        double progress = (double) winTime/EXCLUSIVE_TIMEOUT;
+        
+        bar.setTitle(ChatColor.GOLD + name
+                + ChatColor.YELLOW + " - "
+                + ChatColor.RED + "Chest Lock"
+                + ChatColor.YELLOW + " - "
+                + ChatColor.GOLD + (EXCLUSIVE_TIMEOUT/20-winTime/20) + "s remaining");
+        bar.setProgress(Double.max(0,1-progress));
+        
+        if (winTime >= EXCLUSIVE_TIMEOUT) {
+            bar.removeAll();
+            Bukkit.removeBossBar(new NamespacedKey(plugin, id));
+            
+            state = CapturePointState.INACTIVE;
+        }
+        
+        
     }
     
     public void startEvent() {
@@ -372,7 +411,6 @@ public class CapturePoint implements Listener {
         }
     }
     
-    //Size is only for the boss bar calling this method, use int 1 normally.
     private String getOwnerName() {
         if (currentOwner == null) {
             return "Uncaptured";
@@ -477,6 +515,7 @@ public class CapturePoint implements Listener {
     
     public enum CapturePointState {
         INACTIVE,
-        ACTIVE
+        ACTIVE,
+        CAPTURED
     }
 }
