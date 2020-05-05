@@ -213,7 +213,7 @@ public class CapturePoint implements Listener {
         
         //If a player is within the capturepoint region, add them to the map
         for (Player a : Bukkit.getOnlinePlayers())
-            if (isInRegion(a))
+            if (isInRegion(a) && !a.isDead() && !a.isOp())
                 inRegionMap.compute(convertToOwner(a), (b, c) -> inRegionMap.containsKey(b) ? c + 1 : 1);
             
         int amountOfPlayersInRegion = inRegionMap.size();
