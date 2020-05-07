@@ -30,14 +30,26 @@ public class CapturePointCompleteEvent extends Event {
         return handlers;
     }
     
+    /**
+     *
+     * @return The UUID of the owner (could be clan or player)
+     */
     public UUID getOwner() {
         return currentOwner;
     }
     
+    /**
+     *
+     * @return A list of the players in the region who won the point
+     */
     public List<Player> getPlayers() {
         return players;
     }
     
+    /**
+     *
+     * @return The multiplier of the point
+     */
     public float getLootModifier() {
         return lootModifier;
     }
