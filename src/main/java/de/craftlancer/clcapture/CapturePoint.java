@@ -129,7 +129,10 @@ public class CapturePoint implements Listener {
         
         if (getChestLoction().equals(event.getClickedBlock().getLocation())) {
             event.setCancelled(true);
-            event.getPlayer().sendMessage(MSG_PREFIX + "§eYou cannot open this chest for another §6" + (EXCLUSIVE_TIMEOUT/20-winTime/20) + " seconds§e!");
+            if (state == CapturePointState.CAPTURED)
+                event.getPlayer().sendMessage(MSG_PREFIX + "§eYou cannot open this chest for another §6" + (EXCLUSIVE_TIMEOUT/20-winTime/20) + " seconds§e!");
+            else 
+                event.getPlayer().sendMessage(MSG_PREFIX + "§eYou cannot open this chest!");
         }
     }
     
