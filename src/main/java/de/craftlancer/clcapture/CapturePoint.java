@@ -36,6 +36,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.BoundingBox;
 
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -52,7 +53,7 @@ public class CapturePoint implements Listener {
     private static final String CAPTURE_MESSAGE_DISCORD = ":bannerred:%s took the capture point %s!";
     private static final String EVENT_START_MSG = MSG_PREFIX + "§eThe battle for §6%s §ehas begun! Grab your sword and armor and go to portal: '§6PVP§e' to capture a point!";
     private static final String EVENT_START_MSG_DISCORD = ":bannerwhite:The battle for %s has begun! <@&661388575039946752>";
-    private static final String EVENT_END_MSG = MSG_PREFIX + "%s §ewon the battle for %s!";
+    private static final String EVENT_END_MSG = MSG_PREFIX + "%s §awon the battle for §2%s§a!";
     private static final String EVENT_END_MSG_DISCORD = ":bannergreen:%s won the battle for %s!";
     private static final String CANT_OPEN_MSG = MSG_PREFIX + "§eYou can't open this chest!";
     
@@ -131,8 +132,8 @@ public class CapturePoint implements Listener {
             event.setCancelled(true);
             if (state == CapturePointState.CAPTURED)
                 event.getPlayer().sendMessage(MSG_PREFIX + "§eYou cannot open this chest for another §6" + (EXCLUSIVE_TIMEOUT/20-winTime/20) + " seconds§e!");
-            else 
-                event.getPlayer().sendMessage(MSG_PREFIX + "§eYou cannot open this chest!");
+            else
+                event.getPlayer().sendMessage(CANT_OPEN_MSG);
         }
     }
     
@@ -227,19 +228,19 @@ public class CapturePoint implements Listener {
         bar.setProgress(Math.min(timeMap.getOrDefault(currentOwner, 0) / (double) type.getCaptureTime(), 1D));
         Clan clan = plugin.getClanPlugin().getClanByUUID(currentOwner);
         if (currentOwner == null && amountOfPlayersInRegion > 0)
-            bar.setTitle(ChatColor.GOLD + name
-                    + ChatColor.YELLOW + " - "
-                    + ChatColor.GOLD + "Contested"
-                    + ChatColor.YELLOW + " - ("
-                    + ChatColor.GOLD + scoreMultiplier
-                    + ChatColor.YELLOW + ")");
+            bar.setTitle(ChatColor.WHITE + name
+                    + ChatColor.GRAY + " - "
+                    + ChatColor.WHITE + "Contested"
+                    + ChatColor.GRAY + " - ("
+                    + ChatColor.WHITE + scoreMultiplier
+                    + ChatColor.GRAY + ")");
         else
-            bar.setTitle(ChatColor.GOLD + name
-                    + ChatColor.YELLOW + " - "
+            bar.setTitle(ChatColor.WHITE + name
+                    + ChatColor.GRAY + " - "
                     + (clan == null ? ChatColor.WHITE : clan.getColor()) + getOwnerName()
-                    + ChatColor.YELLOW + " - ("
-                    + ChatColor.GOLD + scoreMultiplier
-                    + ChatColor.YELLOW + ")");
+                    + ChatColor.GRAY + " - ("
+                    + ChatColor.WHITE + scoreMultiplier
+                    + ChatColor.GRAY + ")");
         createParticleEffects();
         bar.setColor(ClanColorUtil.getBarColor(clan));
     
@@ -334,6 +335,13 @@ public class CapturePoint implements Listener {
     }
     
     private void handleWin() {
+        List<Player> playerList = new ArrayList<>();
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            if (isCaptureWinner(player))
+                playerList.add(player);
+        }
+        
+        Bukkit.getPluginManager().callEvent(new CapturePointCompleteEvent(currentOwner, playerList, lootModifier));
         if (plugin.isUsingDiscord() && type.isBroadcastStart())
             DiscordUtil.queueMessage(DiscordSRV.getPlugin().getDestinationTextChannelForGameChannelName("event"),
                     String.format(EVENT_END_MSG_DISCORD, getOwnerName(), this.name));
@@ -349,6 +357,15 @@ public class CapturePoint implements Listener {
         });
         
         winTime = 0;
+    }
+    
+    private boolean isCaptureWinner(Player player) {
+        if (!isInRegion(player))
+            return false;
+        if (plugin.getClanPlugin().getClanByUUID(currentOwner) == null)
+            if (player.getUniqueId() == currentOwner)
+                return true;
+        return plugin.getClanPlugin().getClanByUUID(currentOwner).isMember(player.getUniqueId());
     }
     
     private void runCaptured() {
