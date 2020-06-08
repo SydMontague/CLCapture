@@ -37,7 +37,7 @@ public class TypeSetArtifactModifierCommand extends CaptureSubCommand {
             return CLCapture.PREFIX + "This point does not exist.";
         
         type.get().setArtifactModifer(CapturePointType.ArtifactModifer.fromString(args[3]));
-        return CLCapture.PREFIX + "You have set the artifact modifier to " + args[3].toLowerCase();
+        return CLCapture.PREFIX + "§aYou have set the artifact modifier to §2" + args[3].toLowerCase();
     }
     
     @Override
