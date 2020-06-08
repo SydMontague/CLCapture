@@ -73,11 +73,12 @@ public class CapturePoint implements Listener {
     private float lootModifier = 1.0f;
     private int lastTime = LocalTime.now().toSecondOfDay();
     private long winTime = -1;
+    private CapturePointType.ArtifactModifer artifactModifier;
     
     private UUID currentOwner = null;
     private UUID previousOwner = null;
     private UUID previousMessageOwner = null;
-    private Map<UUID, Integer> timeMap = new HashMap<>();
+    private Map<UUID, Double> timeMap = new HashMap<>();
     private KeyedBossBar bar;
     
     private int lastRadius = 0;
@@ -90,6 +91,7 @@ public class CapturePoint implements Listener {
         this.id = id;
         this.type = type;
         this.chestLocation = chestLocation.getLocation();
+        this.artifactModifier = type.getArtifactModifer();
         updateRegion();
     }
     
@@ -100,6 +102,7 @@ public class CapturePoint implements Listener {
         this.name = config.getString("name", id);
         this.type = plugin.getPointType(config.getString("type"));
         this.chestLocation = config.getObject("chest", Location.class);
+        this.artifactModifier = this.type.getArtifactModifer();
         updateRegion();
     }
     
@@ -224,8 +227,12 @@ public class CapturePoint implements Listener {
         setOwner(inRegionMap);
     
         int scoreMultiplier = getMultiplier(inRegionMap);
-        timeMap.replaceAll((a, b) -> a.equals(currentOwner) ? b + scoreMultiplier : Math.max(b - scoreMultiplier, 0));
-        bar.setProgress(Math.min(timeMap.getOrDefault(currentOwner, 0) / (double) type.getCaptureTime(), 1D));
+        
+        
+        timeMap.replaceAll((a, b) -> a.equals(currentOwner) ? b + getScore(scoreMultiplier) : b-0.8);
+        
+        
+        bar.setProgress(Math.min(timeMap.getOrDefault(currentOwner, 0.0) / (double) type.getCaptureTime(), 1D));
         Clan clan = plugin.getClanPlugin().getClanByUUID(currentOwner);
         if (currentOwner == null && amountOfPlayersInRegion > 0)
             bar.setTitle(ChatColor.WHITE + name
@@ -256,7 +263,7 @@ public class CapturePoint implements Listener {
             setClanColors(null);
         
         //If there is a winner, handle the win and return
-        if (timeMap.getOrDefault(currentOwner, 0) >= type.getCaptureTime()) {
+        if (timeMap.getOrDefault(currentOwner, 0.0) >= type.getCaptureTime()) {
             handleWin();
             return;
         }
@@ -264,6 +271,24 @@ public class CapturePoint implements Listener {
         //Set variables back to default values
         previousOwner = currentOwner;
         currentOwner = null;
+    }
+    
+    private double getScore(int scoreMultiplier) {
+        //5 minutes to capture
+        if (scoreMultiplier <= 1)
+            return 1;
+        //4 minutes to capture
+        else if (scoreMultiplier == 2)
+            return 1.25;
+        //3.5 minutes to capture
+        else if (scoreMultiplier == 3)
+            return 1.428571428;
+        //3.2 minutes to capture
+        else if (scoreMultiplier == 4)
+            return 1.5625;
+        //3 minutes to capture
+        else
+            return 1.666667;
     }
     
     private int getMultiplier(Map<UUID, Integer> inRegionMap) {
@@ -331,7 +356,7 @@ public class CapturePoint implements Listener {
         if (currentOwner != previousOwner)
             setClanColors(plugin.getClanPlugin().getClanByUUID(currentOwner));
         if (currentOwner != null)
-            timeMap.putIfAbsent(currentOwner, 0);
+            timeMap.putIfAbsent(currentOwner, 0.0);
     }
     
     private void handleWin() {
@@ -380,11 +405,11 @@ public class CapturePoint implements Listener {
         
         double progress = (double) winTime/EXCLUSIVE_TIMEOUT;
         
-        bar.setTitle(ChatColor.GOLD + name
-                + ChatColor.YELLOW + " - "
+        bar.setTitle(ChatColor.WHITE + name
+                + ChatColor.GRAY + " - "
                 + ChatColor.RED + "Chest Lock"
-                + ChatColor.YELLOW + " - "
-                + ChatColor.GOLD + (EXCLUSIVE_TIMEOUT/20-winTime/20) + "s remaining");
+                + ChatColor.GRAY + " - "
+                + ChatColor.WHITE + (EXCLUSIVE_TIMEOUT/20-winTime/20) + "s remaining");
         bar.setProgress(Double.max(0,1-progress));
         
         if (winTime >= EXCLUSIVE_TIMEOUT) {
@@ -533,9 +558,15 @@ public class CapturePoint implements Listener {
                 }
     }
     
+    public CapturePointType.ArtifactModifer getArtifactModifier() {
+        return artifactModifier;
+    }
+    
     public enum CapturePointState {
         INACTIVE,
         ACTIVE,
         CAPTURED
     }
+    
+    
 }

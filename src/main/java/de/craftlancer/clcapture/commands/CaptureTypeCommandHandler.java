@@ -25,6 +25,7 @@ public class CaptureTypeCommandHandler extends SubCommandHandler {
         registerSubCommand("pmods", new TypePModListCommand(plugin));
         registerSubCommand("pmodadd", new TypePModAddCommand(plugin));
         registerSubCommand("pmodremove", new TypePModRemoveCommand(plugin));
+        registerSubCommand("setartifactmodifier", new TypeSetArtifactModifierCommand(plugin));
     }
 
     @Override
