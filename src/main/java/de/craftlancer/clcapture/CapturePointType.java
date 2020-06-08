@@ -19,8 +19,8 @@ public class CapturePointType {
     private int bossbarDistance;
     private boolean broadcastStart;
     private NavigableMap<Integer, Float> playerModifier = new TreeMap<>();
+    private ArtifactModifer artifactModifer;
     
-    @SuppressWarnings("unchecked")
     public CapturePointType(ConfigurationSection config) {
         name = config.getName();
         
@@ -29,6 +29,7 @@ public class CapturePointType {
         captureTime = config.getInt("captureTime", 18000); // 15 minutes
         bossbarDistance = config.getInt("bossbarDistance", 200);
         broadcastStart = config.getBoolean("broadcastStart", true);
+        artifactModifer = ArtifactModifer.fromString(config.getString("modifier"));
         
         playerModifier.put(0, 1.0f); // default value
         config.getStringList("playerMod").forEach(a -> {
@@ -47,6 +48,7 @@ public class CapturePointType {
         section.set("broadcastStart", broadcastStart);
         section.set("playerMod", playerModifier.entrySet().stream().map(a -> a.getKey() + " " + a.getValue()).collect(Collectors.toList()));
         section.set("times", times.stream().map(TimeOfDay::toString).collect(Collectors.toList()));
+        section.set("modifier", artifactModifer.toString());
     }
     
     public CapturePointType(String name) {
@@ -63,6 +65,14 @@ public class CapturePointType {
     
     public List<TimeOfDay> getTimes() {
         return Collections.unmodifiableList(times);
+    }
+    
+    public ArtifactModifer getArtifactModifer() {
+        return artifactModifer;
+    }
+    
+    public void setArtifactModifer(ArtifactModifer artifactModifer) {
+        this.artifactModifer = artifactModifer;
     }
     
     public int getCaptureTime() {
@@ -183,6 +193,24 @@ public class CapturePointType {
         @Override
         public String toString() {
             return String.format("%02d:%02d", hour, minute);
+        }
+    }
+    
+    public enum ArtifactModifer {
+        POWERED,
+        UNPOWERED;
+    
+        @Override
+        public String toString() {
+            return super.toString();
+        }
+    
+        public static ArtifactModifer fromString(String modifier) {
+            return modifier == null || !isValidModifier(modifier) || modifier.equalsIgnoreCase("UNPOWERED") ? ArtifactModifer.UNPOWERED : ArtifactModifer.POWERED;
+        }
+        
+        public static boolean isValidModifier(String string) {
+            return string.equalsIgnoreCase("POWERED") || string.equalsIgnoreCase("UNPOWERED");
         }
     }
 }

@@ -5,6 +5,7 @@ import de.craftlancer.clclans.CLClans;
 import de.craftlancer.core.IntRingBuffer;
 import de.craftlancer.core.LambdaRunnable;
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.boss.KeyedBossBar;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -52,6 +53,8 @@ import java.util.stream.Collectors;
  */
 
 public class CLCapture extends JavaPlugin implements Listener {
+    public static final String PREFIX = "§f[§4Craft§fCitizen]§e ";
+    
     public static final String ADMIN_PERMISSION = "clcapture.admin";
     
     private static final int PLAYER_BUFFER_SIZE = 60; // number of updates kept
