@@ -20,6 +20,7 @@ public class CapturePointType {
     private boolean broadcastStart;
     private NavigableMap<Integer, Float> playerModifier = new TreeMap<>();
     private ArtifactModifer artifactModifer;
+    private String days;
     
     public CapturePointType(ConfigurationSection config) {
         name = config.getName();
@@ -30,6 +31,7 @@ public class CapturePointType {
         bossbarDistance = config.getInt("bossbarDistance", 200);
         broadcastStart = config.getBoolean("broadcastStart", true);
         artifactModifer = ArtifactModifer.fromString(config.getString("modifier"));
+        days = config.contains("days") ? config.getString("days") : "1234567";
         
         playerModifier.put(0, 1.0f); // default value
         config.getStringList("playerMod").forEach(a -> {
@@ -49,6 +51,7 @@ public class CapturePointType {
         section.set("playerMod", playerModifier.entrySet().stream().map(a -> a.getKey() + " " + a.getValue()).collect(Collectors.toList()));
         section.set("times", times.stream().map(TimeOfDay::toString).collect(Collectors.toList()));
         section.set("modifier", artifactModifer.toString());
+        section.set("days", days);
     }
     
     public CapturePointType(String name) {
@@ -125,6 +128,14 @@ public class CapturePointType {
     
     public void removePMod(int playerCount) {
         playerModifier.remove(playerCount);
+    }
+    
+    public String getDays() {
+        return days;
+    }
+    
+    public void setDays(String days) {
+        this.days = days;
     }
     
     public static class TimeOfDay implements Comparable<TimeOfDay> {
