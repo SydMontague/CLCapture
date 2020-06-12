@@ -230,7 +230,7 @@ public class CapturePoint implements Listener {
         int scoreMultiplier = getMultiplier(inRegionMap);
         
         
-        timeMap.replaceAll((a, b) -> a.equals(currentOwner) ? b + getScore(scoreMultiplier) : Math.max(b-0.8D, 0D));
+        timeMap.replaceAll((a, b) -> a.equals(currentOwner) ? b + getScore(scoreMultiplier) : Math.max(0D, b - 0.8D));
         
         
         bar.setProgress(Math.min(timeMap.getOrDefault(currentOwner, 0.0) / type.getCaptureTime(), 1D));
