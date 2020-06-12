@@ -230,10 +230,10 @@ public class CapturePoint implements Listener {
         int scoreMultiplier = getMultiplier(inRegionMap);
         
         
-        timeMap.replaceAll((a, b) -> a.equals(currentOwner) ? b + getScore(scoreMultiplier) : Math.max(b-0.8, 0));
+        timeMap.replaceAll((a, b) -> a.equals(currentOwner) ? b + getScore(scoreMultiplier) : Math.max(b-0.8D, 0D));
         
         
-        bar.setProgress(Math.min(timeMap.getOrDefault(currentOwner, 0.0) / (double) type.getCaptureTime(), 1D));
+        bar.setProgress(Math.min(timeMap.getOrDefault(currentOwner, 0.0) / type.getCaptureTime(), 1D));
         Clan clan = plugin.getClanPlugin().getClanByUUID(currentOwner);
         if (currentOwner == null && amountOfPlayersInRegion > 0)
             bar.setTitle(ChatColor.WHITE + name
