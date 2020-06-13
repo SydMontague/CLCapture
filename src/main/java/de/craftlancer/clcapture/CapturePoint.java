@@ -37,6 +37,7 @@ import org.bukkit.util.BoundingBox;
 
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -51,7 +52,7 @@ public class CapturePoint implements Listener {
     
     private static final String CAPTURE_MESSAGE = MSG_PREFIX + "%s §etook the capture point %s!";
     private static final String CAPTURE_MESSAGE_DISCORD = ":bannerred:%s took the capture point %s!";
-    private static final String EVENT_START_MSG = MSG_PREFIX + "§eThe battle for §6%s §ehas begun! Grab your sword and armor and go to portal: '§6PVP§e' to capture a point!";
+    private static final String EVENT_START_MSG = MSG_PREFIX + "§eThe battle for §6%s §ehas begun!";
     private static final String EVENT_START_MSG_DISCORD = ":bannerwhite:The battle for %s has begun! <@&661388575039946752>";
     private static final String EVENT_END_MSG = MSG_PREFIX + "%s §awon the battle for §2%s§a!";
     private static final String EVENT_END_MSG_DISCORD = ":bannergreen:%s won the battle for %s!";
@@ -208,7 +209,7 @@ public class CapturePoint implements Listener {
         if (now == lastTime)
             return;
         
-        if (type.getTimes().stream().map(TimeOfDay::toSecondsOfDay).anyMatch(time -> (time > lastTime || now < lastTime) && time <= now))
+        if (type.getDays().contains(String.valueOf(Calendar.getInstance().get(Calendar.DAY_OF_WEEK))) && type.getTimes().stream().map(TimeOfDay::toSecondsOfDay).anyMatch(time -> (time > lastTime || now < lastTime) && time <= now))
             startEvent();
         
         lastTime = now;

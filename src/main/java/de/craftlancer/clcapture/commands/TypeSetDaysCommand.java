@@ -1,7 +1,6 @@
 package de.craftlancer.clcapture.commands;
 
 import de.craftlancer.clcapture.CLCapture;
-import de.craftlancer.clcapture.CapturePoint;
 import de.craftlancer.clcapture.CapturePointType;
 import de.craftlancer.core.Utils;
 import org.bukkit.command.Command;
@@ -13,8 +12,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-public class TypeSetArtifactModifierCommand extends CaptureSubCommand {
-    public TypeSetArtifactModifierCommand(CLCapture plugin) {
+public class TypeSetDaysCommand extends CaptureSubCommand {
+    public TypeSetDaysCommand(CLCapture plugin) {
         super(CLCapture.ADMIN_PERMISSION, plugin, false);
     }
     
@@ -26,18 +25,15 @@ public class TypeSetArtifactModifierCommand extends CaptureSubCommand {
             return CLCapture.PREFIX + "You must specify a type id!";
         
         if (args.length < 4)
-            return CLCapture.PREFIX + "You must specify an artifact modifier!";
-    
-        if (!CapturePointType.ArtifactModifer.isValidModifier(args[3]))
-            return CLCapture.PREFIX + "You must enter a valid artifact modifier!";
+            return CLCapture.PREFIX + "You must specify the days you want to use!";
         
         Optional<CapturePointType> type = getPlugin().getTypes().values().stream().filter(a -> a.getName().equals(args[2])).findFirst();
     
         if (!type.isPresent())
             return CLCapture.PREFIX + "This point does not exist.";
         
-        type.get().setArtifactModifer(CapturePointType.ArtifactModifer.fromString(args[3]));
-        return CLCapture.PREFIX + "§aYou have set the artifact modifier to §2" + args[3] + "§a!";
+        type.get().setDays(args[3].equalsIgnoreCase("all") ? "1234567" : args[3]);
+        return CLCapture.PREFIX + "§aYou have set the days that this point will activate on to: §2" + args[3] + "§a!";
     }
     
     @Override
@@ -45,7 +41,7 @@ public class TypeSetArtifactModifierCommand extends CaptureSubCommand {
         if (args.length == 3)
             return Utils.getMatches(args[2], getPlugin().getTypes().values().stream().map(CapturePointType::getName).collect(Collectors.toList()));
         if (args.length == 4)
-            return Utils.getMatches(args[3], Arrays.asList("POWERED", "UNPOWERED"));
+            return Utils.getMatches(args[3], Arrays.asList("all", "1", "2", "3", "4", "5", "6", "7", "17", "23456"));
     
         return Collections.emptyList();
     }
