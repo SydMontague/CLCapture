@@ -2,11 +2,15 @@ package de.craftlancer.clcapture;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.NavigableMap;
 import java.util.TreeMap;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
+import de.craftlancer.clclans.Clan;
+import org.bukkit.Bukkit;
 import org.bukkit.configuration.Configuration;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.inventory.ItemStack;
@@ -21,8 +25,14 @@ public class CapturePointType {
     private NavigableMap<Integer, Float> playerModifier = new TreeMap<>();
     private ArtifactModifer artifactModifer;
     private String days;
+    private boolean excludeTopClans;
+    private int excludeTopXClans;
+    private boolean pingDiscord = true;
+    private CLCapture plugin;
+    private List<Clan> topXClans;
     
-    public CapturePointType(ConfigurationSection config) {
+    public CapturePointType(CLCapture plugin, ConfigurationSection config) {
+        this.plugin = plugin;
         name = config.getName();
         
         items = (List<ItemStack>) config.getList("drops", new ArrayList<>());
@@ -32,6 +42,8 @@ public class CapturePointType {
         broadcastStart = config.getBoolean("broadcastStart", true);
         artifactModifer = ArtifactModifer.fromString(config.getString("modifier"));
         days = config.contains("days") ? config.getString("days") : "1234567";
+        excludeTopClans = config.contains("excludeTopClans") ? config.getBoolean("excludeTopClans") : false;
+        excludeTopXClans = config.contains("excludeTopXClans") ? config.getInt("excludeTopXClans") : 3;
         
         playerModifier.put(0, 1.0f); // default value
         config.getStringList("playerMod").forEach(a -> {
@@ -52,6 +64,8 @@ public class CapturePointType {
         section.set("times", times.stream().map(TimeOfDay::toString).collect(Collectors.toList()));
         section.set("modifier", artifactModifer.toString());
         section.set("days", days);
+        section.set("excludeTopClans", excludeTopClans);
+        section.set("excludeTopXClans", excludeTopXClans);
     }
     
     public CapturePointType(String name) {
@@ -136,6 +150,47 @@ public class CapturePointType {
     
     public void setDays(String days) {
         this.days = days;
+    }
+    
+    public boolean isPingDiscord() {
+        return pingDiscord;
+    }
+    
+    public void setPingDiscord(boolean pingDiscord) {
+        this.pingDiscord = pingDiscord;
+    }
+    
+    public boolean isExcludeTopClans() {
+        return excludeTopClans;
+    }
+    
+    public void setExcludeTopClans(boolean excludeTopClans) {
+        this.excludeTopClans = excludeTopClans;
+    }
+    
+    public int getExcludeTopXClans() {
+        return excludeTopXClans;
+    }
+    
+    public void setExcludeTopXClans(int excludeTopXClans) {
+        this.excludeTopXClans = excludeTopXClans;
+    }
+    
+    public void setTopXClans(List<Clan> topXClans) {
+        this.topXClans = topXClans;
+    }
+    
+    /**
+     *
+     * @param uuid - the player
+     * @return - true if the point is excluding top x clans, and that player is in a top x clan
+     */
+    public boolean isPlayerExcluded(UUID uuid) {
+        if (!excludeTopClans)
+            return false;
+        if (plugin.getClanPlugin().getClan(Bukkit.getOfflinePlayer(uuid)) == null)
+            return false;
+        return topXClans.stream().anyMatch(clan -> clan.isMember(uuid));
     }
     
     public static class TimeOfDay implements Comparable<TimeOfDay> {

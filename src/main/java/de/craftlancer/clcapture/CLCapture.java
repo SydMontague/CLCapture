@@ -5,7 +5,6 @@ import de.craftlancer.clclans.CLClans;
 import de.craftlancer.core.IntRingBuffer;
 import de.craftlancer.core.LambdaRunnable;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.boss.KeyedBossBar;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -111,7 +110,7 @@ public class CLCapture extends JavaPlugin implements Listener {
         FileConfiguration pointsData = YamlConfiguration.loadConfiguration(pointsFile);
         FileConfiguration typesData = YamlConfiguration.loadConfiguration(typesFile);
         
-        types = typesData.getKeys(false).stream().map(key -> new CapturePointType(typesData.getConfigurationSection(key)))
+        types = typesData.getKeys(false).stream().map(key -> new CapturePointType(this, typesData.getConfigurationSection(key)))
                 .collect(Collectors.toMap(CapturePointType::getName, a -> a));
         
         points = pointsData.getKeys(false).stream().map(key -> new CapturePoint(this, key, pointsData.getConfigurationSection(key)))
