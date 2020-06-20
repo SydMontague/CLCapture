@@ -2,12 +2,16 @@ package de.craftlancer.clcapture;
 
 import de.craftlancer.clcapture.commands.CaptureCommandHandler;
 import de.craftlancer.clclans.CLClans;
+import de.craftlancer.clclans.Clan;
+import de.craftlancer.clclans.events.ClanLeaveEvent;
 import de.craftlancer.core.IntRingBuffer;
 import de.craftlancer.core.LambdaRunnable;
 import org.bukkit.Bukkit;
 import org.bukkit.boss.KeyedBossBar;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.craftbukkit.libs.org.apache.commons.io.FileUtils;
+import org.bukkit.event.EventHandler;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -15,10 +19,13 @@ import org.bukkit.scheduler.BukkitRunnable;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 
@@ -61,12 +68,14 @@ public class CLCapture extends JavaPlugin implements Listener {
     
     private final File pointsFile = new File(getDataFolder(), "points.yml");
     private final File typesFile = new File(getDataFolder(), "types.yml");
+    private final File pastClansFile = new File(getDataFolder(), "pastClans.yml");
     
     private CLClans clanPlugin;
     
     private IntRingBuffer playerCountBuffer = new IntRingBuffer(PLAYER_BUFFER_SIZE);
     private Map<String, CapturePointType> types;
     private List<CapturePoint> points;
+    private List<PlayerPastClanStorage> pastClans;
     
     private boolean useDiscord;
     
@@ -81,6 +90,7 @@ public class CLCapture extends JavaPlugin implements Listener {
         
         saveDefaultConfig();
         loadConfig();
+        registerPastClans();
         
         getCommand("capture").setExecutor(new CaptureCommandHandler(this));
         
@@ -104,6 +114,33 @@ public class CLCapture extends JavaPlugin implements Listener {
         
         savePoints(false);
         saveTypes(false);
+        savePastClans(false);
+    }
+    
+    @EventHandler (ignoreCancelled = true)
+    public void onClanLeave(ClanLeaveEvent event) {
+        Clan clan = event.getClan();
+        UUID playerUUID = event.getPlayer().getUniqueId();
+        
+        Optional<PlayerPastClanStorage> optional = pastClans.stream().filter(pastClan -> pastClan.getPlayerUUID().equals(playerUUID)).findFirst();
+        
+        if (optional.isPresent())
+            optional.get().add(clan.getUniqueId(), System.currentTimeMillis());
+        else
+            pastClans.add(new PlayerPastClanStorage(this, playerUUID, clan.getUniqueId(), System.currentTimeMillis()));
+    }
+    
+    private void registerPastClans() {
+        if (!pastClansFile.exists())
+            try {
+                InputStream stream = getResource("pastClans.yml");
+                FileUtils.copyInputStreamToFile(stream, pastClansFile);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        YamlConfiguration pastClansData = YamlConfiguration.loadConfiguration(pastClansFile);
+            
+            pastClans = (List<PlayerPastClanStorage>) pastClansData.get("pastClans");
     }
     
     private void loadConfig() {
@@ -146,6 +183,31 @@ public class CLCapture extends JavaPlugin implements Listener {
             }
         });
         
+        if (async)
+            run.runTaskAsynchronously(this);
+        else
+            run.run();
+    }
+    
+    private void savePastClans(boolean async) {
+        if (!pastClansFile.exists())
+            try {
+                InputStream stream = getResource("pastClans.yml");
+                FileUtils.copyInputStreamToFile(stream, pastClansFile);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        YamlConfiguration pastClansData = YamlConfiguration.loadConfiguration(pastClansFile);
+        
+        BukkitRunnable run = new LambdaRunnable(() -> {
+            pastClansData.set("pastClans", pastClans.stream().filter(storage -> storage.getLast24HourClans().size() > 0).collect(Collectors.toList()));
+            try {
+                pastClansData.save(pastClansFile);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
+    
         if (async)
             run.runTaskAsynchronously(this);
         else
@@ -207,5 +269,9 @@ public class CLCapture extends JavaPlugin implements Listener {
     
     public boolean isUsingDiscord() {
         return useDiscord;
+    }
+    
+    public List<PlayerPastClanStorage> getPastClans() {
+        return pastClans;
     }
 }

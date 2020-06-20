@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.NavigableMap;
+import java.util.Optional;
 import java.util.TreeMap;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -188,8 +189,10 @@ public class CapturePointType {
     public boolean isPlayerExcluded(UUID uuid) {
         if (!excludeTopClans)
             return false;
-        if (plugin.getClanPlugin().getClan(Bukkit.getOfflinePlayer(uuid)) == null)
-            return false;
+        Optional<PlayerPastClanStorage> optional = plugin.getPastClans().stream().filter(storage -> storage.getPlayerUUID().equals(uuid)).findFirst();
+        if (optional.isPresent())
+            if (optional.get().getLast24HourClans().stream().anyMatch(clan -> topXClans.contains(clan)))
+                return true;
         return topXClans.stream().anyMatch(clan -> clan.isMember(uuid));
     }
     

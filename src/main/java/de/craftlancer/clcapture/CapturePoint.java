@@ -229,7 +229,7 @@ public class CapturePoint implements Listener {
                     if (tickId % 20 == 0)
                         a.playSound(a.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS,0.5F,0.5F);
                     if (tickId % 100 == 0)
-                        a.sendMessage(MSG_PREFIX + ChatColor.YELLOW + "Your clan is too powerful to capture this point!");
+                        a.sendMessage(MSG_PREFIX + ChatColor.YELLOW + "Your clan or past clan is too powerful to capture this point!");
                     continue;
                 }
                 inRegionMap.compute(convertToOwner(a), (b, c) -> inRegionMap.containsKey(b) ? c + 1 : 1);
