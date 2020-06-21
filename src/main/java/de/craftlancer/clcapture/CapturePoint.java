@@ -12,6 +12,7 @@ import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.Particle;
+import org.bukkit.Sound;
 import org.bukkit.Tag;
 import org.bukkit.World;
 import org.bukkit.block.Block;
@@ -33,6 +34,7 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.BoundingBox;
 
 import java.time.LocalTime;
@@ -53,7 +55,8 @@ public class CapturePoint implements Listener {
     private static final String CAPTURE_MESSAGE = MSG_PREFIX + "%s §etook the capture point %s!";
     private static final String CAPTURE_MESSAGE_DISCORD = ":bannerred:%s took the capture point %s!";
     private static final String EVENT_START_MSG = MSG_PREFIX + "§eThe battle for §6%s §ehas begun!";
-    private static final String EVENT_START_MSG_DISCORD = ":bannerwhite:The battle for %s has begun! <@&661388575039946752>";
+    private static final String EVENT_TYPE_START_MSG_DISCORD = ":bannerwhite:The battle for %s capture points is beginning! <@&661388575039946752>";
+    private static final String EVENT_START_MSG_DISCORD = ":bannerwhite:The battle for %s has begun!";
     private static final String EVENT_END_MSG = MSG_PREFIX + "%s §awon the battle for §2%s§a!";
     private static final String EVENT_END_MSG_DISCORD = ":bannergreen:%s won the battle for %s!";
     private static final String CANT_OPEN_MSG = MSG_PREFIX + "§eYou can't open this chest!";
@@ -220,9 +223,18 @@ public class CapturePoint implements Listener {
         lastTime = LocalTime.now().toSecondOfDay();
         
         //If a player is within the capturepoint region, add them to the map
-        for (Player a : Bukkit.getOnlinePlayers())
-            if (isInRegion(a) && !a.isDead() && !a.isOp())
+        for (Player a : Bukkit.getOnlinePlayers()) {
+            if (isInRegion(a) && !a.isDead() && !a.isOp()) {
+                if (type.isExcludeTopClans() && type.isPlayerExcluded(a.getUniqueId())) {
+                    if (tickId % 20 == 0)
+                        a.playSound(a.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS,0.5F,0.5F);
+                    if (tickId % 100 == 0)
+                        a.sendMessage(MSG_PREFIX + ChatColor.YELLOW + "Your clan or past clan is too powerful to capture this point!");
+                    continue;
+                }
                 inRegionMap.compute(convertToOwner(a), (b, c) -> inRegionMap.containsKey(b) ? c + 1 : 1);
+            }
+        }
             
         int amountOfPlayersInRegion = inRegionMap.size();
         setOwner(inRegionMap);
@@ -424,6 +436,7 @@ public class CapturePoint implements Listener {
     }
     
     public void startEvent() {
+        type.setTopXClans(plugin.getClanPlugin().getClans().stream().sorted(Comparator.comparingDouble(Clan::calculateClanScore).reversed()).limit(type.getExcludeTopXClans()).collect(Collectors.toList()));
         previousMessageOwner = null;
         previousOwner = null;
         currentOwner = null;
@@ -440,9 +453,22 @@ public class CapturePoint implements Listener {
         
         if (type.isBroadcastStart()) {
             Bukkit.broadcastMessage(String.format(EVENT_START_MSG, this.name));
-            if (plugin.isUsingDiscord())
+            if (plugin.isUsingDiscord() && type.isPingDiscord()) {
                 DiscordUtil.queueMessage(DiscordSRV.getPlugin().getDestinationTextChannelForGameChannelName("event"),
                         String.format(EVENT_START_MSG_DISCORD, this.name));
+                
+                if (type.isPingDiscord()) {
+                    DiscordUtil.queueMessage(DiscordSRV.getPlugin().getDestinationTextChannelForGameChannelName("event"),
+                            String.format(EVENT_TYPE_START_MSG_DISCORD, type.getName()));
+                    type.setPingDiscord(false);
+                    new BukkitRunnable() {
+                        @Override
+                        public void run() {
+                            type.setPingDiscord(true);
+                        }
+                    }.runTaskLater(plugin, 300);
+                }
+            }
         }
         
         winTime = 0;
