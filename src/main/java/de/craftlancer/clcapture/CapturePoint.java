@@ -3,6 +3,7 @@ package de.craftlancer.clcapture;
 import de.craftlancer.clcapture.CapturePointType.TimeOfDay;
 import de.craftlancer.clcapture.util.ClanColorUtil;
 import de.craftlancer.clclans.Clan;
+import de.craftlancer.core.LambdaRunnable;
 import github.scarsz.discordsrv.DiscordSRV;
 import github.scarsz.discordsrv.util.DiscordUtil;
 import org.bukkit.Bukkit;
@@ -453,21 +454,15 @@ public class CapturePoint implements Listener {
         
         if (type.isBroadcastStart()) {
             Bukkit.broadcastMessage(String.format(EVENT_START_MSG, this.name));
-            if (plugin.isUsingDiscord() && type.isPingDiscord()) {
-                DiscordUtil.queueMessage(DiscordSRV.getPlugin().getDestinationTextChannelForGameChannelName("event"),
-                        String.format(EVENT_START_MSG_DISCORD, this.name));
-                
+            if (plugin.isUsingDiscord()) {
                 if (type.isPingDiscord()) {
                     DiscordUtil.queueMessage(DiscordSRV.getPlugin().getDestinationTextChannelForGameChannelName("event"),
                             String.format(EVENT_TYPE_START_MSG_DISCORD, type.getName()));
                     type.setPingDiscord(false);
-                    new BukkitRunnable() {
-                        @Override
-                        public void run() {
-                            type.setPingDiscord(true);
-                        }
-                    }.runTaskLater(plugin, 300);
+                    new LambdaRunnable(() -> type.setPingDiscord(true)).runTaskLater(plugin, 300);
                 }
+                DiscordUtil.queueMessage(DiscordSRV.getPlugin().getDestinationTextChannelForGameChannelName("event"),
+                        String.format(EVENT_START_MSG_DISCORD, this.name));
             }
         }
         
