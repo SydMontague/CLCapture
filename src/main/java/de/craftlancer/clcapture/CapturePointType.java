@@ -18,6 +18,7 @@ import org.bukkit.inventory.ItemStack;
 
 public class CapturePointType {
     private final String name;
+    private String displayName;
     private List<ItemStack> items = new ArrayList<>();
     private List<TimeOfDay> times = new ArrayList<>();
     private int captureTime;
@@ -36,6 +37,7 @@ public class CapturePointType {
         this.plugin = plugin;
         name = config.getName();
         
+        displayName = config.contains("displayName") ? config.getString("displayName") : name;
         items = (List<ItemStack>) config.getList("drops", new ArrayList<>());
         times = config.getStringList("times").stream().map(TimeOfDay::new).filter(TimeOfDay::isValid).collect(Collectors.toList());
         captureTime = config.getInt("captureTime", 18000); // 15 minutes
@@ -57,6 +59,7 @@ public class CapturePointType {
     
     public void save(Configuration config) {
         ConfigurationSection section = config.createSection(getName());
+        section.set("displayName", displayName);
         section.set("drops", items);
         section.set("captureTime", captureTime);
         section.set("bossbarDistance", bossbarDistance);
@@ -71,10 +74,24 @@ public class CapturePointType {
     
     public CapturePointType(String name) {
         this.name = name;
+        this.displayName = name;
+    }
+    
+    public CapturePointType(String name, String displayName) {
+        this.name = name;
+        this.displayName = displayName;
     }
     
     public String getName() {
         return name;
+    }
+    
+    public String getDisplayName() {
+        return displayName;
+    }
+    
+    public void setDisplayName(String displayName) {
+        this.displayName = displayName;
     }
     
     public List<ItemStack> getItems() {
@@ -153,11 +170,11 @@ public class CapturePointType {
         this.days = days;
     }
     
-    public boolean isPingDiscord() {
+    public boolean isPing() {
         return pingDiscord;
     }
     
-    public void setPingDiscord(boolean pingDiscord) {
+    public void setPing(boolean pingDiscord) {
         this.pingDiscord = pingDiscord;
     }
     

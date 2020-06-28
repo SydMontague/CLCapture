@@ -35,7 +35,6 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.BoundingBox;
 
 import java.time.LocalTime;
@@ -53,10 +52,11 @@ public class CapturePoint implements Listener {
     
     private static final String MSG_PREFIX = ChatColor.GRAY + "§f[§4§lPvP §c§lEvent§f] ";
     
-    private static final String CAPTURE_MESSAGE = MSG_PREFIX + "%s §etook the capture point %s!";
+    private static final String CAPTURE_MESSAGE = MSG_PREFIX + "§6%s §etook the capture point §6%s!";
     private static final String CAPTURE_MESSAGE_DISCORD = ":bannerred:%s took the capture point %s!";
     private static final String EVENT_START_MSG = MSG_PREFIX + "§eThe battle for §6%s §ehas begun!";
-    private static final String EVENT_TYPE_START_MSG_DISCORD = ":bannerwhite:The battle for %s capture points is beginning! <@&661388575039946752>";
+    private static final String EVENT_TYPE_START_MSG = MSG_PREFIX + "§eThe battle for the §6%s capture points §eis beginning! Grab your gear and get ready to fight!";
+    private static final String EVENT_TYPE_START_MSG_DISCORD = ":bannerwhite:The battle for the %s capture points is beginning! <@&661388575039946752>";
     private static final String EVENT_START_MSG_DISCORD = ":bannerwhite:The battle for %s has begun!";
     private static final String EVENT_END_MSG = MSG_PREFIX + "%s §awon the battle for §2%s§a!";
     private static final String EVENT_END_MSG_DISCORD = ":bannergreen:%s won the battle for %s!";
@@ -451,19 +451,23 @@ public class CapturePoint implements Listener {
         bar = Bukkit.createBossBar(new NamespacedKey(plugin, id), "", BarColor.WHITE, BarStyle.SOLID);
         
         state = CapturePointState.ACTIVE;
-        
+    
         if (type.isBroadcastStart()) {
-            Bukkit.broadcastMessage(String.format(EVENT_START_MSG, this.name));
-            if (plugin.isUsingDiscord()) {
-                if (type.isPingDiscord()) {
+            if (type.isPing()) {
+                Bukkit.broadcastMessage(String.format(EVENT_TYPE_START_MSG, type.getDisplayName()));
+                if (plugin.isUsingDiscord()) {
                     DiscordUtil.queueMessage(DiscordSRV.getPlugin().getDestinationTextChannelForGameChannelName("event"),
-                            String.format(EVENT_TYPE_START_MSG_DISCORD, type.getName()));
-                    type.setPingDiscord(false);
-                    new LambdaRunnable(() -> type.setPingDiscord(true)).runTaskLater(plugin, 300);
+                            String.format(EVENT_TYPE_START_MSG_DISCORD, type.getDisplayName()));
                 }
+                type.setPing(false);
+                new LambdaRunnable(() -> type.setPing(true)).runTaskLater(plugin, 300);
+            }
+            
+            if (plugin.isUsingDiscord())
                 DiscordUtil.queueMessage(DiscordSRV.getPlugin().getDestinationTextChannelForGameChannelName("event"),
                         String.format(EVENT_START_MSG_DISCORD, this.name));
-            }
+            
+            Bukkit.broadcastMessage(String.format(EVENT_START_MSG, this.name));
         }
         
         winTime = 0;
@@ -479,10 +483,11 @@ public class CapturePoint implements Listener {
     }
     
     private String getOwnerName() {
-        if (currentOwner == null) {
+        if (currentOwner == null)
             return "Uncaptured";
-        }
+        
         Clan c = plugin.getClanPlugin().getClanByUUID(currentOwner);
+        
         if (c != null)
             return c.getName();
         

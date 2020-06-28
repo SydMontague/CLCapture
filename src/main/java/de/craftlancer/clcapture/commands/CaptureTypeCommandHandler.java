@@ -26,9 +26,10 @@ public class CaptureTypeCommandHandler extends SubCommandHandler {
         registerSubCommand("pmodadd", new TypePModAddCommand(plugin));
         registerSubCommand("pmodremove", new TypePModRemoveCommand(plugin));
         registerSubCommand("setartifactmodifier", new TypeSetArtifactModifierCommand(plugin));
-        registerSubCommand("setDays", new TypeSetDaysCommand(plugin));
-        registerSubCommand("setExcludeTopClans", new TypeSetExcludeTopClansCommand(plugin));
-        registerSubCommand("setExcludeTopXClans", new TypeSetExcludeTopXClansCommand(plugin));
+        registerSubCommand("setdays", new TypeSetDaysCommand(plugin));
+        registerSubCommand("excludetopclans", new TypeSetExcludeTopClansCommand(plugin));
+        registerSubCommand("settopexcludedclans", new TypeSetExcludeTopXClansCommand(plugin));
+        registerSubCommand("setdisplayname", new TypeSetDisplayNameCommand(plugin));
     }
 
     @Override
