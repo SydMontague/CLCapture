@@ -273,9 +273,6 @@ public class CapturePoint implements Listener {
                     .filter(a -> a.getLocation().distance(chestLocation) < type.getBossbarDistance()).forEach(bar::addPlayer);
         }
         
-        if (currentOwner == null)
-            setClanColors(null);
-        
         //If there is a winner, handle the win and return
         if (timeMap.getOrDefault(currentOwner, 0.0) >= type.getCaptureTime()) {
             handleWin();
@@ -564,6 +561,9 @@ public class CapturePoint implements Listener {
     }
     
     private void setClanColors(Clan clan) {
+        if(chestLocation.getWorld().isChunkLoaded(chestLocation.getBlockX() >> 4, chestLocation.getBlockZ() >> 4))
+            return;
+        
         double minX = region.getMinX();
         double minY = region.getMinY();
         double minZ = region.getMinZ();
