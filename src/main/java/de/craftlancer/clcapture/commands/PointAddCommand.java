@@ -40,15 +40,15 @@ public class PointAddCommand extends CaptureSubCommand {
         String name = args[3];
         String id = args[4];
         if (!plugin.getTypes().containsKey(type))
-            sender.sendMessage("This capture point type does not exist!");
+            return "This capture point type does not exist!";
         else if (name.isEmpty() || id.isEmpty())
-            sender.sendMessage("You must specify a name and an ID!");
+            return "You must specify a name and an ID!";
         else if (plugin.getPoints().stream().map(CapturePoint::getName).anyMatch(a -> a.equals(name)))
-            sender.sendMessage("A capture point with this name already exists!");
+            return "A capture point with this name already exists!";
         else if (plugin.getPoints().stream().map(CapturePoint::getId).anyMatch(a -> a.equals(name)))
-            sender.sendMessage("A capture point with this id already exists!");
+            return "A capture point with this id already exists!";
         else if (chestLocation.getBlock().getType() != Material.CHEST && chestLocation.getBlock().getType() != Material.TRAPPED_CHEST)
-            sender.sendMessage("You must be looking at a chest!");
+            return "You must be looking at a chest!";
         else {
             CapturePoint point = new CapturePoint(this.plugin, name, id, plugin.getTypes().get(type), chestLocation.getBlock());
             plugin.addPoint(point);

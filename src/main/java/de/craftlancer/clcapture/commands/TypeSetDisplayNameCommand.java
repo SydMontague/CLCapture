@@ -6,7 +6,6 @@ import de.craftlancer.core.Utils;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
