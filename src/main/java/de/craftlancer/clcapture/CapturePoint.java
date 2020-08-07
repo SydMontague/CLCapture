@@ -561,7 +561,7 @@ public class CapturePoint implements Listener {
     }
     
     private void setClanColors(Clan clan) {
-        if(chestLocation.getWorld().isChunkLoaded(chestLocation.getBlockX() >> 4, chestLocation.getBlockZ() >> 4))
+        if(!chestLocation.getWorld().isChunkLoaded(chestLocation.getBlockX() >> 4, chestLocation.getBlockZ() >> 4))
             return;
         
         double minX = region.getMinX();
