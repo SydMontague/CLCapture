@@ -2,7 +2,6 @@ package de.craftlancer.clcapture;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.NavigableMap;
 import java.util.Optional;
@@ -11,7 +10,6 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import de.craftlancer.clclans.Clan;
-import org.bukkit.Bukkit;
 import org.bukkit.configuration.Configuration;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.inventory.ItemStack;

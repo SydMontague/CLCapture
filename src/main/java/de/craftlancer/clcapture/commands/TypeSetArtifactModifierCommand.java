@@ -1,7 +1,6 @@
 package de.craftlancer.clcapture.commands;
 
 import de.craftlancer.clcapture.CLCapture;
-import de.craftlancer.clcapture.CapturePoint;
 import de.craftlancer.clcapture.CapturePointType;
 import de.craftlancer.core.Utils;
 import org.bukkit.command.Command;
