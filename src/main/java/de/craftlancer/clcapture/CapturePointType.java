@@ -19,14 +19,14 @@ public class CapturePointType {
     private String displayName;
     private List<ItemStack> items = new ArrayList<>();
     private List<TimeOfDay> times = new ArrayList<>();
-    private int captureTime;
-    private int bossbarDistance;
-    private boolean broadcastStart;
+    private int captureTime = 600;
+    private int bossbarDistance = 200;
+    private boolean broadcastStart = true;
     private NavigableMap<Integer, Float> playerModifier = new TreeMap<>();
-    private ArtifactModifer artifactModifer;
-    private String days;
-    private boolean excludeTopClans;
-    private int excludeTopXClans;
+    private ArtifactModifer artifactModifer = ArtifactModifer.UNPOWERED;
+    private String days = "1234567";
+    private boolean excludeTopClans = false;
+    private int excludeTopXClans = 3;
     private boolean pingDiscord = true;
     private CLCapture plugin;
     private List<Clan> topXClans;
@@ -42,9 +42,9 @@ public class CapturePointType {
         bossbarDistance = config.getInt("bossbarDistance", 200);
         broadcastStart = config.getBoolean("broadcastStart", true);
         artifactModifer = ArtifactModifer.fromString(config.getString("modifier"));
-        days = config.contains("days") ? config.getString("days") : "1234567";
-        excludeTopClans = config.contains("excludeTopClans") ? config.getBoolean("excludeTopClans") : false;
-        excludeTopXClans = config.contains("excludeTopXClans") ? config.getInt("excludeTopXClans") : 3;
+        days = config.getString("days", "1234567");
+        excludeTopClans = config.getBoolean("excludeTopClans", false);
+        excludeTopXClans = config.getInt("excludeTopXClans", 3);
         
         playerModifier.put(0, 1.0f); // default value
         config.getStringList("playerMod").forEach(a -> {

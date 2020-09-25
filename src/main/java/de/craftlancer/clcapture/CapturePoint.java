@@ -242,12 +242,11 @@ public class CapturePoint implements Listener {
     
         int scoreMultiplier = getMultiplier(inRegionMap);
         
-        
         timeMap.replaceAll((a, b) -> a.equals(currentOwner) ? b + getScore(scoreMultiplier) : Math.max(0D, b - 0.8D));
-        
         
         bar.setProgress(Math.min(timeMap.getOrDefault(currentOwner, 0.0) / type.getCaptureTime(), 1D));
         Clan clan = plugin.getClanPlugin().getClanByUUID(currentOwner);
+        
         if (currentOwner == null && amountOfPlayersInRegion > 0)
             bar.setTitle(ChatColor.WHITE + name
                     + ChatColor.GRAY + " - "
@@ -262,6 +261,7 @@ public class CapturePoint implements Listener {
                     + ChatColor.GRAY + " - ("
                     + ChatColor.WHITE + scoreMultiplier
                     + ChatColor.GRAY + ")");
+        
         createParticleEffects();
         bar.setColor(ClanColorUtil.getBarColor(clan));
     
@@ -398,9 +398,8 @@ public class CapturePoint implements Listener {
     private boolean isCaptureWinner(Player player) {
         if (!isInRegion(player))
             return false;
-        if (plugin.getClanPlugin().getClanByUUID(currentOwner) == null)
-            if (player.getUniqueId() == currentOwner)
-                return true;
+        if (plugin.getClanPlugin().getClanByUUID(currentOwner) == null && player.getUniqueId() == currentOwner)
+            return true;
         return plugin.getClanPlugin().getClanByUUID(currentOwner).isMember(player.getUniqueId());
     }
     
@@ -526,7 +525,7 @@ public class CapturePoint implements Listener {
     
     public TimeOfDay getNextTime() {
         return type.getTimes().stream().filter(a -> a.toSecondsOfDay() - LocalTime.now().toSecondOfDay() >= 0).min(TimeOfDay::compareTo)
-                .orElseGet(() -> type.getTimes().stream().min(TimeOfDay::compareTo).get());
+                .orElseGet(() -> type.getTimes().stream().min(TimeOfDay::compareTo).orElse(new TimeOfDay(0, 0)));
     }
     
     protected void save(FileConfiguration pointsData) {
