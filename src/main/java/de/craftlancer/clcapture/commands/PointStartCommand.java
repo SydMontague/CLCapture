@@ -5,13 +5,13 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import de.craftlancer.clapi.clcapture.CapturePointState;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 import de.craftlancer.clcapture.CLCapture;
 import de.craftlancer.clcapture.CapturePoint;
-import de.craftlancer.clcapture.CapturePoint.CapturePointState;
 
 public class PointStartCommand extends CaptureSubCommand {
     

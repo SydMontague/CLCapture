@@ -1,9 +1,10 @@
 package de.craftlancer.clcapture;
 
+import de.craftlancer.clapi.clcapture.PluginCLCapture;
+import de.craftlancer.clapi.clclans.AbstractClan;
+import de.craftlancer.clapi.clclans.PluginClans;
+import de.craftlancer.clapi.clclans.events.ClanLeaveEvent;
 import de.craftlancer.clcapture.commands.CaptureCommandHandler;
-import de.craftlancer.clclans.CLClans;
-import de.craftlancer.clclans.Clan;
-import de.craftlancer.clclans.events.ClanLeaveEvent;
 import de.craftlancer.core.IntRingBuffer;
 import de.craftlancer.core.LambdaRunnable;
 import org.bukkit.Bukkit;
@@ -14,6 +15,7 @@ import org.bukkit.craftbukkit.libs.org.apache.commons.io.FileUtils;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
+import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
@@ -58,7 +60,7 @@ import java.util.stream.Collectors;
  *
  */
 
-public class CLCapture extends JavaPlugin implements Listener {
+public class CLCapture extends JavaPlugin implements Listener, PluginCLCapture {
     public static final String PREFIX = "§f[§4Craft§fCitizen]§e ";
     
     public static final String ADMIN_PERMISSION = "clcapture.admin";
@@ -70,7 +72,7 @@ public class CLCapture extends JavaPlugin implements Listener {
     private final File typesFile = new File(getDataFolder(), "types.yml");
     private final File pastClansFile = new File(getDataFolder(), "pastClans.yml");
     
-    private CLClans clanPlugin;
+    private PluginClans clanPlugin;
     
     private IntRingBuffer playerCountBuffer = new IntRingBuffer(PLAYER_BUFFER_SIZE);
     private Map<String, CapturePointType> types;
@@ -83,8 +85,8 @@ public class CLCapture extends JavaPlugin implements Listener {
     public void onEnable() {
         useDiscord = Bukkit.getPluginManager().getPlugin("DiscordSRV") != null;
         Bukkit.getPluginManager().registerEvents(this, this);
+        Bukkit.getServicesManager().register(PluginCLCapture.class,this,this, ServicePriority.Highest);
         
-        clanPlugin = (CLClans) getServer().getPluginManager().getPlugin("CLClans");
         if (clanPlugin == null)
             getLogger().severe("Couldn't find CLClans!");
         
@@ -119,7 +121,7 @@ public class CLCapture extends JavaPlugin implements Listener {
     
     @EventHandler (ignoreCancelled = true)
     public void onClanLeave(ClanLeaveEvent event) {
-        Clan clan = event.getClan();
+        AbstractClan clan = event.getClan();
         UUID playerUUID = event.getPlayer().getUniqueId();
         
         Optional<PlayerPastClanStorage> optional = pastClans.stream().filter(pastClan -> pastClan.getPlayerUUID().equals(playerUUID)).findFirst();
@@ -247,10 +249,14 @@ public class CLCapture extends JavaPlugin implements Listener {
         savePoints(true);
     }
     
-    public CLClans getClanPlugin() {
+    protected PluginClans getClanPlugin() {
+        if (clanPlugin == null)
+            clanPlugin = Bukkit.getServicesManager().load(PluginClans.class);
+        
         return clanPlugin;
     }
     
+    @Override
     public List<CapturePoint> getPoints() {
         return points;
     }

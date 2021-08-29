@@ -1,12 +1,10 @@
 package de.craftlancer.clcapture;
 
-import de.craftlancer.clclans.Clan;
+import de.craftlancer.clapi.clclans.AbstractClan;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.jetbrains.annotations.NotNull;
 
-import java.sql.SQLOutput;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -60,7 +58,7 @@ public class PlayerPastClanStorage implements ConfigurationSerializable {
     /**
      * @return All clans that the player has been in in the last 24 hours
      */
-    public List<Clan> getLast24HourClans() {
+    public List<AbstractClan> getLast24HourClans() {
         return clanLeaveMap.entrySet().stream()
                 .filter(entry -> System.currentTimeMillis() < entry.getValue() && plugin.getClanPlugin().getClanByUUID(entry.getKey()) != null)
                 .map(entry -> plugin.getClanPlugin().getClanByUUID(entry.getKey())).collect(Collectors.toList());

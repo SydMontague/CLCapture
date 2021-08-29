@@ -1,8 +1,14 @@
 package de.craftlancer.clcapture;
 
+import de.craftlancer.clapi.clcapture.AbstractCapturePointType;
+import de.craftlancer.clapi.clcapture.ArtifactModifier;
+import de.craftlancer.clapi.clclans.AbstractClan;
+import org.bukkit.configuration.Configuration;
+import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.inventory.ItemStack;
+
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.NavigableMap;
 import java.util.Optional;
@@ -10,13 +16,7 @@ import java.util.TreeMap;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import de.craftlancer.clclans.Clan;
-import org.bukkit.Bukkit;
-import org.bukkit.configuration.Configuration;
-import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.inventory.ItemStack;
-
-public class CapturePointType {
+public class CapturePointType implements AbstractCapturePointType {
     private final String name;
     private String displayName;
     private List<ItemStack> items = new ArrayList<>();
@@ -25,13 +25,13 @@ public class CapturePointType {
     private int bossbarDistance;
     private boolean broadcastStart;
     private NavigableMap<Integer, Float> playerModifier = new TreeMap<>();
-    private ArtifactModifer artifactModifer;
+    private ArtifactModifier artifactModifer;
     private String days;
     private boolean excludeTopClans;
     private int excludeTopXClans;
     private boolean pingDiscord = true;
     private CLCapture plugin;
-    private List<Clan> topXClans;
+    private List<AbstractClan> topXClans;
     
     public CapturePointType(CLCapture plugin, ConfigurationSection config) {
         this.plugin = plugin;
@@ -43,7 +43,7 @@ public class CapturePointType {
         captureTime = config.getInt("captureTime", 18000); // 15 minutes
         bossbarDistance = config.getInt("bossbarDistance", 200);
         broadcastStart = config.getBoolean("broadcastStart", true);
-        artifactModifer = ArtifactModifer.fromString(config.getString("modifier"));
+        artifactModifer = ArtifactModifier.fromString(config.getString("modifier"));
         days = config.contains("days") ? config.getString("days") : "1234567";
         excludeTopClans = config.contains("excludeTopClans") ? config.getBoolean("excludeTopClans") : false;
         excludeTopXClans = config.contains("excludeTopXClans") ? config.getInt("excludeTopXClans") : 3;
@@ -82,10 +82,12 @@ public class CapturePointType {
         this.displayName = displayName;
     }
     
+    @Override
     public String getName() {
         return name;
     }
     
+    @Override
     public String getDisplayName() {
         return displayName;
     }
@@ -94,6 +96,7 @@ public class CapturePointType {
         this.displayName = displayName;
     }
     
+    @Override
     public List<ItemStack> getItems() {
         return Collections.unmodifiableList(items);
     }
@@ -102,11 +105,12 @@ public class CapturePointType {
         return Collections.unmodifiableList(times);
     }
     
-    public ArtifactModifer getArtifactModifer() {
+    @Override
+    public ArtifactModifier getArtifactModifier() {
         return artifactModifer;
     }
     
-    public void setArtifactModifer(ArtifactModifer artifactModifer) {
+    public void setArtifactModifier(ArtifactModifier artifactModifer) {
         this.artifactModifer = artifactModifer;
     }
     
@@ -118,14 +122,17 @@ public class CapturePointType {
         this.captureTime = captureTime;
     }
     
+    @Override
     public NavigableMap<Integer, Float> getPlayerModifier() {
         return Collections.unmodifiableNavigableMap(playerModifier);
     }
     
+    @Override
     public int getBossbarDistance() {
         return bossbarDistance;
     }
     
+    @Override
     public boolean isBroadcastStart() {
         return broadcastStart;
     }
@@ -170,6 +177,7 @@ public class CapturePointType {
         this.days = days;
     }
     
+    @Override
     public boolean isPing() {
         return pingDiscord;
     }
@@ -178,6 +186,7 @@ public class CapturePointType {
         this.pingDiscord = pingDiscord;
     }
     
+    @Override
     public boolean isExcludeTopClans() {
         return excludeTopClans;
     }
@@ -194,7 +203,7 @@ public class CapturePointType {
         this.excludeTopXClans = excludeTopXClans;
     }
     
-    public void setTopXClans(List<Clan> topXClans) {
+    public void setTopXClans(List<AbstractClan> topXClans) {
         this.topXClans = topXClans;
     }
     
@@ -203,6 +212,7 @@ public class CapturePointType {
      * @param uuid - the player
      * @return - true if the point is excluding top x clans, and that player is in a top x clan
      */
+    @Override
     public boolean isPlayerExcluded(UUID uuid) {
         if (!excludeTopClans)
             return false;
@@ -279,24 +289,6 @@ public class CapturePointType {
         @Override
         public String toString() {
             return String.format("%02d:%02d", hour, minute);
-        }
-    }
-    
-    public enum ArtifactModifer {
-        POWERED,
-        UNPOWERED;
-    
-        @Override
-        public String toString() {
-            return super.toString();
-        }
-    
-        public static ArtifactModifer fromString(String modifier) {
-            return modifier == null || !isValidModifier(modifier) || modifier.equalsIgnoreCase("UNPOWERED") ? ArtifactModifer.UNPOWERED : ArtifactModifer.POWERED;
-        }
-        
-        public static boolean isValidModifier(String string) {
-            return string.equalsIgnoreCase("POWERED") || string.equalsIgnoreCase("UNPOWERED");
         }
     }
 }

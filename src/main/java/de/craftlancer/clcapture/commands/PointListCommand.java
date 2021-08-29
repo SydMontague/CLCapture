@@ -1,11 +1,11 @@
 package de.craftlancer.clcapture.commands;
 
+import de.craftlancer.clapi.clcapture.CapturePointState;
 import org.bukkit.Location;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 
 import de.craftlancer.clcapture.CLCapture;
-import de.craftlancer.clcapture.CapturePoint.CapturePointState;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.ClickEvent;
 import net.md_5.bungee.api.chat.ClickEvent.Action;
@@ -36,7 +36,7 @@ public class PointListCommand extends CaptureSubCommand {
             base.addExtra(" ");
             base.addExtra(a.getType().getName());
             base.addExtra(" ");
-            Location loc = a.getChestLoction();
+            Location loc = a.getChestLocation();
             base.addExtra(Integer.toString(loc.getBlockX()));
             base.addExtra(",");
             base.addExtra(Integer.toString(loc.getBlockY()));
