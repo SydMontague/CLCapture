@@ -251,9 +251,7 @@ public class CapturePoint implements Listener, AbstractCapturePoint {
     
         int scoreMultiplier = getMultiplier(inRegionMap);
         
-        
         timeMap.replaceAll((a, b) -> a.equals(currentOwner) ? b + getScore(scoreMultiplier) : Math.max(0D, b - 0.8D));
-        
         
         bar.setProgress(Math.min(timeMap.getOrDefault(currentOwner, 0.0) / type.getCaptureTime(), 1D));
         AbstractClan clan = CLANS.get().getClanByUUID(currentOwner);
@@ -271,6 +269,7 @@ public class CapturePoint implements Listener, AbstractCapturePoint {
                     + ChatColor.GRAY + " - ("
                     + ChatColor.WHITE + scoreMultiplier
                     + ChatColor.GRAY + ")");
+        
         createParticleEffects();
         bar.setColor(MaterialUtil.getBarColor(clan == null ? null : clan.getColor()));
     
@@ -537,7 +536,7 @@ public class CapturePoint implements Listener, AbstractCapturePoint {
     
     public TimeOfDay getNextTime() {
         return type.getTimes().stream().filter(a -> a.toSecondsOfDay() - LocalTime.now().toSecondOfDay() >= 0).min(TimeOfDay::compareTo)
-                .orElseGet(() -> type.getTimes().stream().min(TimeOfDay::compareTo).get());
+                .orElseGet(() -> type.getTimes().stream().min(TimeOfDay::compareTo).orElse(new TimeOfDay(0, 0)));
     }
     
     protected void save(FileConfiguration pointsData) {
