@@ -1,5 +1,6 @@
 package de.craftlancer.clcapture;
 
+import de.craftlancer.clapi.LazyService;
 import de.craftlancer.clapi.clcapture.PluginCLCapture;
 import de.craftlancer.clapi.clclans.AbstractClan;
 import de.craftlancer.clapi.clclans.PluginClans;
@@ -65,14 +66,14 @@ public class CLCapture extends JavaPlugin implements Listener, PluginCLCapture {
     
     public static final String ADMIN_PERMISSION = "clcapture.admin";
     
+    private static final LazyService<PluginClans> CLANS = new LazyService<>(PluginClans.class);
+    
     private static final int PLAYER_BUFFER_SIZE = 60; // number of updates kept
     private static final int PLAYER_BUFFER_FREQUENCY = 60 * 20; // update frequency
     
     private final File pointsFile = new File(getDataFolder(), "points.yml");
     private final File typesFile = new File(getDataFolder(), "types.yml");
     private final File pastClansFile = new File(getDataFolder(), "pastClans.yml");
-    
-    private PluginClans clanPlugin;
     
     private IntRingBuffer playerCountBuffer = new IntRingBuffer(PLAYER_BUFFER_SIZE);
     private Map<String, CapturePointType> types;
@@ -86,9 +87,6 @@ public class CLCapture extends JavaPlugin implements Listener, PluginCLCapture {
         useDiscord = Bukkit.getPluginManager().getPlugin("DiscordSRV") != null;
         Bukkit.getPluginManager().registerEvents(this, this);
         Bukkit.getServicesManager().register(PluginCLCapture.class,this,this, ServicePriority.Highest);
-        
-        if (clanPlugin == null)
-            getLogger().severe("Couldn't find CLClans!");
         
         saveDefaultConfig();
         loadConfig();
@@ -247,13 +245,6 @@ public class CLCapture extends JavaPlugin implements Listener, PluginCLCapture {
         HandlerList.unregisterAll(capturePoint);
         capturePoint.destroy();
         savePoints(true);
-    }
-    
-    protected PluginClans getClanPlugin() {
-        if (clanPlugin == null)
-            clanPlugin = Bukkit.getServicesManager().load(PluginClans.class);
-        
-        return clanPlugin;
     }
     
     @Override
