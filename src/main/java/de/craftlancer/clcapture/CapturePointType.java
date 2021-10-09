@@ -25,7 +25,7 @@ public class CapturePointType implements AbstractCapturePointType {
     private int bossbarDistance = 200;
     private boolean broadcastStart = true;
     private NavigableMap<Integer, Float> playerModifier = new TreeMap<>();
-    private ArtifactModifer artifactModifer = ArtifactModifer.UNPOWERED;
+    private ArtifactModifier artifactModifer = ArtifactModifier.UNPOWERED;
     private String days = "1234567";
     private boolean excludeTopClans = false;
     private int excludeTopXClans = 3;
@@ -43,7 +43,7 @@ public class CapturePointType implements AbstractCapturePointType {
         captureTime = config.getInt("captureTime", 18000); // 15 minutes
         bossbarDistance = config.getInt("bossbarDistance", 200);
         broadcastStart = config.getBoolean("broadcastStart", true);
-        artifactModifer = ArtifactModifer.fromString(config.getString("modifier"));
+        artifactModifer = ArtifactModifier.fromString(config.getString("modifier"));
         days = config.getString("days", "1234567");
         excludeTopClans = config.getBoolean("excludeTopClans", false);
         excludeTopXClans = config.getInt("excludeTopXClans", 3);
