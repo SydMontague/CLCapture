@@ -1,5 +1,6 @@
 package de.craftlancer.clcapture.commands;
 
+import de.craftlancer.clapi.clcapture.ArtifactModifier;
 import de.craftlancer.clcapture.CLCapture;
 import de.craftlancer.clcapture.CapturePointType;
 import de.craftlancer.core.Utils;
@@ -27,7 +28,7 @@ public class TypeSetArtifactModifierCommand extends CaptureSubCommand {
         if (args.length < 4)
             return CLCapture.PREFIX + "You must specify an artifact modifier!";
     
-        if (!CapturePointType.ArtifactModifer.isValidModifier(args[3]))
+        if (!ArtifactModifier.isValidModifier(args[3]))
             return CLCapture.PREFIX + "You must enter a valid artifact modifier!";
         
         Optional<CapturePointType> type = getPlugin().getTypes().values().stream().filter(a -> a.getName().equals(args[2])).findFirst();
@@ -35,7 +36,7 @@ public class TypeSetArtifactModifierCommand extends CaptureSubCommand {
         if (!type.isPresent())
             return CLCapture.PREFIX + "This point does not exist.";
         
-        type.get().setArtifactModifer(CapturePointType.ArtifactModifer.fromString(args[3]));
+        type.get().setArtifactModifier(ArtifactModifier.fromString(args[3]));
         return CLCapture.PREFIX + "§aYou have set the artifact modifier to §2" + args[3] + "§a!";
     }
     

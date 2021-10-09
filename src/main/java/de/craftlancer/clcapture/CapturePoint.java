@@ -1,9 +1,15 @@
 package de.craftlancer.clcapture;
 
+import de.craftlancer.clapi.LazyService;
+import de.craftlancer.clapi.clcapture.AbstractCapturePoint;
+import de.craftlancer.clapi.clcapture.ArtifactModifier;
+import de.craftlancer.clapi.clcapture.CapturePointState;
+import de.craftlancer.clapi.clclans.AbstractClan;
+import de.craftlancer.clapi.clclans.PluginClans;
 import de.craftlancer.clcapture.CapturePointType.TimeOfDay;
-import de.craftlancer.clcapture.util.ClanColorUtil;
-import de.craftlancer.clclans.Clan;
 import de.craftlancer.core.LambdaRunnable;
+import de.craftlancer.core.Utils;
+import de.craftlancer.core.util.MaterialUtil;
 import github.scarsz.discordsrv.DiscordSRV;
 import github.scarsz.discordsrv.util.DiscordUtil;
 import org.bukkit.Bukkit;
@@ -47,7 +53,10 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-public class CapturePoint implements Listener {
+public class CapturePoint implements Listener, AbstractCapturePoint {
+    
+    private static final LazyService<PluginClans> CLANS = new LazyService<>(PluginClans.class);
+    
     private static final long EXCLUSIVE_TIMEOUT = 6000;
     
     private static final String MSG_PREFIX = ChatColor.GRAY + "§f[§4§lPvP §c§lEvent§f] ";
@@ -74,11 +83,11 @@ public class CapturePoint implements Listener {
     private int tickId = 0;
     private BoundingBox region;
     
-    private CapturePointState state = CapturePointState.INACTIVE;
+    private de.craftlancer.clapi.clcapture.CapturePointState state = CapturePointState.INACTIVE;
     private float lootModifier = 1.0f;
     private int lastTime = LocalTime.now().toSecondOfDay();
     private long winTime = -1;
-    private CapturePointType.ArtifactModifer artifactModifier;
+    private ArtifactModifier artifactModifier;
     
     private UUID currentOwner = null;
     private UUID previousOwner = null;
@@ -96,7 +105,7 @@ public class CapturePoint implements Listener {
         this.id = id;
         this.type = type;
         this.chestLocation = chestLocation.getLocation();
-        this.artifactModifier = type.getArtifactModifer();
+        this.artifactModifier = type.getArtifactModifier();
         updateRegion();
     }
     
@@ -107,7 +116,7 @@ public class CapturePoint implements Listener {
         this.name = config.getString("name", id);
         this.type = plugin.getPointType(config.getString("type"));
         this.chestLocation = config.getObject("chest", Location.class);
-        this.artifactModifier = this.type.getArtifactModifer();
+        this.artifactModifier = this.type.getArtifactModifier();
         updateRegion();
     }
     
@@ -136,7 +145,7 @@ public class CapturePoint implements Listener {
         if (event.getPlayer().hasPermission(CLCapture.ADMIN_PERMISSION))
             return;
         
-        if (getChestLoction().equals(event.getClickedBlock().getLocation())) {
+        if (getChestLocation().equals(event.getClickedBlock().getLocation())) {
             event.setCancelled(true);
             if (state == CapturePointState.CAPTURED)
                 event.getPlayer().sendMessage(MSG_PREFIX + "§eYou cannot open this chest for another §6" + (EXCLUSIVE_TIMEOUT/20-winTime/20) + " seconds§e!");
@@ -162,7 +171,7 @@ public class CapturePoint implements Listener {
         
         InventoryHolder holder = inventory.getHolder();
         
-        if (!(holder instanceof Container && ((Container) holder).getLocation().equals(getChestLoction())))
+        if (!(holder instanceof Container && ((Container) holder).getLocation().equals(getChestLocation())))
             return;
         
         event.setCancelled(true);
@@ -245,8 +254,7 @@ public class CapturePoint implements Listener {
         timeMap.replaceAll((a, b) -> a.equals(currentOwner) ? b + getScore(scoreMultiplier) : Math.max(0D, b - 0.8D));
         
         bar.setProgress(Math.min(timeMap.getOrDefault(currentOwner, 0.0) / type.getCaptureTime(), 1D));
-        Clan clan = plugin.getClanPlugin().getClanByUUID(currentOwner);
-        
+        AbstractClan clan = CLANS.get().getClanByUUID(currentOwner);
         if (currentOwner == null && amountOfPlayersInRegion > 0)
             bar.setTitle(ChatColor.WHITE + name
                     + ChatColor.GRAY + " - "
@@ -263,7 +271,7 @@ public class CapturePoint implements Listener {
                     + ChatColor.GRAY + ")");
         
         createParticleEffects();
-        bar.setColor(ClanColorUtil.getBarColor(clan));
+        bar.setColor(MaterialUtil.getBarColor(clan == null ? null : clan.getColor()));
     
         //Check if players are within distance to add to the boss bar
         if (tickId % 20 == 0) {
@@ -328,10 +336,10 @@ public class CapturePoint implements Listener {
         
         World world = chestLocation.getWorld();
         Particle.DustOptions particle;
-        if (plugin.getClanPlugin().getClanByUUID(currentOwner) == null)
+        if (CLANS.get().getClanByUUID(currentOwner) == null)
             particle = new Particle.DustOptions(Color.WHITE,1F);
         else
-            particle = new Particle.DustOptions(ClanColorUtil.getBukkitColor(plugin.getClanPlugin().getClanByUUID(currentOwner)), 1);
+            particle = new Particle.DustOptions(MaterialUtil.getBukkitColor(CLANS.get().getClanByUUID(currentOwner).getColor()), 1);
         
         double increment = (2 * Math.PI) / 150;
         for (int i = 0; i < 150; i++) {
@@ -365,7 +373,7 @@ public class CapturePoint implements Listener {
             announce();
         }
         if (currentOwner != previousOwner)
-            setClanColors(plugin.getClanPlugin().getClanByUUID(currentOwner));
+            setClanColors(CLANS.get().getClanByUUID(currentOwner));
         if (currentOwner != null)
             timeMap.putIfAbsent(currentOwner, 0.0);
     }
@@ -398,9 +406,10 @@ public class CapturePoint implements Listener {
     private boolean isCaptureWinner(Player player) {
         if (!isInRegion(player))
             return false;
-        if (plugin.getClanPlugin().getClanByUUID(currentOwner) == null && player.getUniqueId() == currentOwner)
-            return true;
-        return plugin.getClanPlugin().getClanByUUID(currentOwner).isMember(player.getUniqueId());
+        if (CLANS.get().getClanByUUID(currentOwner) == null)
+            if (player.getUniqueId() == currentOwner)
+                return true;
+        return CLANS.get().getClanByUUID(currentOwner).isMember(player.getUniqueId());
     }
     
     private void runCaptured() {
@@ -433,7 +442,7 @@ public class CapturePoint implements Listener {
     }
     
     public void startEvent() {
-        type.setTopXClans(plugin.getClanPlugin().getClans().stream().sorted(Comparator.comparingDouble(Clan::calculateClanScore).reversed()).limit(type.getExcludeTopXClans()).collect(Collectors.toList()));
+        type.setTopXClans(CLANS.get().getClans().stream().sorted(Comparator.comparingDouble(AbstractClan::calculateClanScore).reversed()).limit(type.getExcludeTopXClans()).collect(Collectors.toList()));
         previousMessageOwner = null;
         previousOwner = null;
         currentOwner = null;
@@ -482,7 +491,7 @@ public class CapturePoint implements Listener {
         if (currentOwner == null)
             return "Uncaptured";
         
-        Clan c = plugin.getClanPlugin().getClanByUUID(currentOwner);
+        AbstractClan c = CLANS.get().getClanByUUID(currentOwner);
         
         if (c != null)
             return c.getName();
@@ -498,7 +507,7 @@ public class CapturePoint implements Listener {
         if (currentOwner == null || player == null)
             return false;
         
-        Clan c = plugin.getClanPlugin().getClan(Bukkit.getOfflinePlayer(player.getUniqueId()));
+        AbstractClan c = CLANS.get().getClan(Bukkit.getOfflinePlayer(player.getUniqueId()));
         
         if (c != null && c.getUniqueId().equals(currentOwner))
             return true;
@@ -507,7 +516,7 @@ public class CapturePoint implements Listener {
     }
     
     private UUID convertToOwner(HumanEntity player) {
-        Clan c = plugin.getClanPlugin().getClan(Bukkit.getOfflinePlayer(player.getUniqueId()));
+        AbstractClan c = CLANS.get().getClan(Bukkit.getOfflinePlayer(player.getUniqueId()));
         
         if (c != null)
             return c.getUniqueId();
@@ -515,10 +524,12 @@ public class CapturePoint implements Listener {
         return player.getUniqueId();
     }
     
+    @Override
     public String getName() {
         return name;
     }
     
+    @Override
     public String getId() {
         return id;
     }
@@ -542,14 +553,17 @@ public class CapturePoint implements Listener {
         }
     }
     
+    @Override
     public CapturePointType getType() {
         return type;
     }
     
-    public Location getChestLoction() {
+    @Override
+    public Location getChestLocation() {
         return chestLocation;
     }
     
+    @Override
     public CapturePointState getState() {
         return state;
     }
@@ -559,8 +573,8 @@ public class CapturePoint implements Listener {
         return region.contains(location.getX(), location.getY(),location.getZ());
     }
     
-    private void setClanColors(Clan clan) {
-        if(!chestLocation.getWorld().isChunkLoaded(chestLocation.getBlockX() >> 4, chestLocation.getBlockZ() >> 4))
+    private void setClanColors(AbstractClan clan) {
+        if(!Utils.isChunkLoaded(chestLocation))
             return;
         
         double minX = region.getMinX();
@@ -575,24 +589,17 @@ public class CapturePoint implements Listener {
             for (double y = minY; y <= maxY; y++)
                 for (double z = minZ; z <= maxZ; z++) {
                     Location location = new Location(chestLocation.getWorld(), x, y, z);
-                    if (ClanColorUtil.isConcrete(location.getBlock().getType()))
-                        location.getBlock().setType(ClanColorUtil.getConcreteColor(clan));
-                    if (ClanColorUtil.isGlass(location.getBlock().getType()))
-                        location.getBlock().setType(ClanColorUtil.getGlassColor(clan));
+                    if (MaterialUtil.isConcrete(location.getBlock().getType()))
+                        location.getBlock().setType(MaterialUtil.getConcreteColor(clan == null ? null : clan.getColor()));
+                    if (MaterialUtil.isGlass(location.getBlock().getType()))
+                        location.getBlock().setType(MaterialUtil.getGlassColor(clan == null ? null : clan.getColor()));
                     if (Tag.BANNERS.isTagged(location.getBlock().getType()))
-                        ClanColorUtil.setClanBanner(clan, location);
+                        MaterialUtil.setBanner(location,clan == null || clan.getBanner() == null ? null : clan.getBanner());
                 }
     }
     
-    public CapturePointType.ArtifactModifer getArtifactModifier() {
+    @Override
+    public ArtifactModifier getArtifactModifier() {
         return artifactModifier;
     }
-    
-    public enum CapturePointState {
-        INACTIVE,
-        ACTIVE,
-        CAPTURED
-    }
-    
-    
 }

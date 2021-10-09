@@ -1,5 +1,12 @@
 package de.craftlancer.clcapture;
 
+import de.craftlancer.clapi.clcapture.AbstractCapturePointType;
+import de.craftlancer.clapi.clcapture.ArtifactModifier;
+import de.craftlancer.clapi.clclans.AbstractClan;
+import org.bukkit.configuration.Configuration;
+import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.inventory.ItemStack;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -9,12 +16,7 @@ import java.util.TreeMap;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import de.craftlancer.clclans.Clan;
-import org.bukkit.configuration.Configuration;
-import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.inventory.ItemStack;
-
-public class CapturePointType {
+public class CapturePointType implements AbstractCapturePointType {
     private final String name;
     private String displayName;
     private List<ItemStack> items = new ArrayList<>();
@@ -29,7 +31,7 @@ public class CapturePointType {
     private int excludeTopXClans = 3;
     private boolean pingDiscord = true;
     private CLCapture plugin;
-    private List<Clan> topXClans;
+    private List<AbstractClan> topXClans;
     
     public CapturePointType(CLCapture plugin, ConfigurationSection config) {
         this.plugin = plugin;
@@ -80,10 +82,12 @@ public class CapturePointType {
         this.displayName = displayName;
     }
     
+    @Override
     public String getName() {
         return name;
     }
     
+    @Override
     public String getDisplayName() {
         return displayName;
     }
@@ -92,6 +96,7 @@ public class CapturePointType {
         this.displayName = displayName;
     }
     
+    @Override
     public List<ItemStack> getItems() {
         return Collections.unmodifiableList(items);
     }
@@ -100,11 +105,12 @@ public class CapturePointType {
         return Collections.unmodifiableList(times);
     }
     
-    public ArtifactModifer getArtifactModifer() {
+    @Override
+    public ArtifactModifier getArtifactModifier() {
         return artifactModifer;
     }
     
-    public void setArtifactModifer(ArtifactModifer artifactModifer) {
+    public void setArtifactModifier(ArtifactModifier artifactModifer) {
         this.artifactModifer = artifactModifer;
     }
     
@@ -116,14 +122,17 @@ public class CapturePointType {
         this.captureTime = captureTime;
     }
     
+    @Override
     public NavigableMap<Integer, Float> getPlayerModifier() {
         return Collections.unmodifiableNavigableMap(playerModifier);
     }
     
+    @Override
     public int getBossbarDistance() {
         return bossbarDistance;
     }
     
+    @Override
     public boolean isBroadcastStart() {
         return broadcastStart;
     }
@@ -168,6 +177,7 @@ public class CapturePointType {
         this.days = days;
     }
     
+    @Override
     public boolean isPing() {
         return pingDiscord;
     }
@@ -176,6 +186,7 @@ public class CapturePointType {
         this.pingDiscord = pingDiscord;
     }
     
+    @Override
     public boolean isExcludeTopClans() {
         return excludeTopClans;
     }
@@ -192,7 +203,7 @@ public class CapturePointType {
         this.excludeTopXClans = excludeTopXClans;
     }
     
-    public void setTopXClans(List<Clan> topXClans) {
+    public void setTopXClans(List<AbstractClan> topXClans) {
         this.topXClans = topXClans;
     }
     
@@ -201,6 +212,7 @@ public class CapturePointType {
      * @param uuid - the player
      * @return - true if the point is excluding top x clans, and that player is in a top x clan
      */
+    @Override
     public boolean isPlayerExcluded(UUID uuid) {
         if (!excludeTopClans)
             return false;
@@ -277,24 +289,6 @@ public class CapturePointType {
         @Override
         public String toString() {
             return String.format("%02d:%02d", hour, minute);
-        }
-    }
-    
-    public enum ArtifactModifer {
-        POWERED,
-        UNPOWERED;
-    
-        @Override
-        public String toString() {
-            return super.toString();
-        }
-    
-        public static ArtifactModifer fromString(String modifier) {
-            return modifier == null || !isValidModifier(modifier) || modifier.equalsIgnoreCase("UNPOWERED") ? ArtifactModifer.UNPOWERED : ArtifactModifer.POWERED;
-        }
-        
-        public static boolean isValidModifier(String string) {
-            return string.equalsIgnoreCase("POWERED") || string.equalsIgnoreCase("UNPOWERED");
         }
     }
 }

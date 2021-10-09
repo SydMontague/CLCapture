@@ -1,9 +1,11 @@
 package de.craftlancer.clcapture;
 
+import de.craftlancer.clapi.LazyService;
+import de.craftlancer.clapi.clcapture.PluginCLCapture;
+import de.craftlancer.clapi.clclans.AbstractClan;
+import de.craftlancer.clapi.clclans.PluginClans;
+import de.craftlancer.clapi.clclans.events.ClanLeaveEvent;
 import de.craftlancer.clcapture.commands.CaptureCommandHandler;
-import de.craftlancer.clclans.CLClans;
-import de.craftlancer.clclans.Clan;
-import de.craftlancer.clclans.events.ClanLeaveEvent;
 import de.craftlancer.core.IntRingBuffer;
 import de.craftlancer.core.LambdaRunnable;
 import org.bukkit.Bukkit;
@@ -14,6 +16,7 @@ import org.bukkit.craftbukkit.libs.org.apache.commons.io.FileUtils;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
+import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
@@ -58,10 +61,12 @@ import java.util.stream.Collectors;
  *
  */
 
-public class CLCapture extends JavaPlugin implements Listener {
+public class CLCapture extends JavaPlugin implements Listener, PluginCLCapture {
     public static final String PREFIX = "§f[§4Craft§fCitizen]§e ";
     
     public static final String ADMIN_PERMISSION = "clcapture.admin";
+    
+    private static final LazyService<PluginClans> CLANS = new LazyService<>(PluginClans.class);
     
     private static final int PLAYER_BUFFER_SIZE = 60; // number of updates kept
     private static final int PLAYER_BUFFER_FREQUENCY = 60 * 20; // update frequency
@@ -69,8 +74,6 @@ public class CLCapture extends JavaPlugin implements Listener {
     private final File pointsFile = new File(getDataFolder(), "points.yml");
     private final File typesFile = new File(getDataFolder(), "types.yml");
     private final File pastClansFile = new File(getDataFolder(), "pastClans.yml");
-    
-    private CLClans clanPlugin;
     
     private IntRingBuffer playerCountBuffer = new IntRingBuffer(PLAYER_BUFFER_SIZE);
     private Map<String, CapturePointType> types;
@@ -83,10 +86,7 @@ public class CLCapture extends JavaPlugin implements Listener {
     public void onEnable() {
         useDiscord = Bukkit.getPluginManager().getPlugin("DiscordSRV") != null;
         Bukkit.getPluginManager().registerEvents(this, this);
-        
-        clanPlugin = (CLClans) getServer().getPluginManager().getPlugin("CLClans");
-        if (clanPlugin == null)
-            getLogger().severe("Couldn't find CLClans!");
+        Bukkit.getServicesManager().register(PluginCLCapture.class,this,this, ServicePriority.Highest);
         
         saveDefaultConfig();
         loadConfig();
@@ -119,7 +119,7 @@ public class CLCapture extends JavaPlugin implements Listener {
     
     @EventHandler (ignoreCancelled = true)
     public void onClanLeave(ClanLeaveEvent event) {
-        Clan clan = event.getClan();
+        AbstractClan clan = event.getClan();
         UUID playerUUID = event.getPlayer().getUniqueId();
         
         Optional<PlayerPastClanStorage> optional = pastClans.stream().filter(pastClan -> pastClan.getPlayerUUID().equals(playerUUID)).findFirst();
@@ -247,10 +247,7 @@ public class CLCapture extends JavaPlugin implements Listener {
         savePoints(true);
     }
     
-    public CLClans getClanPlugin() {
-        return clanPlugin;
-    }
-    
+    @Override
     public List<CapturePoint> getPoints() {
         return points;
     }

@@ -1,6 +1,8 @@
 package de.craftlancer.clcapture;
 
-import de.craftlancer.clclans.Clan;
+import de.craftlancer.clapi.LazyService;
+import de.craftlancer.clapi.clclans.AbstractClan;
+import de.craftlancer.clapi.clclans.PluginClans;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.jetbrains.annotations.NotNull;
@@ -12,6 +14,8 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 public class PlayerPastClanStorage implements ConfigurationSerializable {
+    
+    private static final LazyService<PluginClans> CLANS = new LazyService<>(PluginClans.class);
     
     private CLCapture plugin;
     private UUID playerUUID;
@@ -49,7 +53,7 @@ public class PlayerPastClanStorage implements ConfigurationSerializable {
         Map<String, Object> map = new HashMap<>();
         
         map.put("playerUUID", playerUUID.toString());
-        clanLeaveMap.entrySet().stream().filter(entry -> plugin.getClanPlugin().getClanByUUID(entry.getKey()) != null)
+        clanLeaveMap.entrySet().stream().filter(entry -> CLANS.get().getClanByUUID(entry.getKey()) != null)
                 .forEach(entry -> map.put(entry.getKey().toString(),entry.getValue()));
 
         return map;
@@ -58,10 +62,10 @@ public class PlayerPastClanStorage implements ConfigurationSerializable {
     /**
      * @return All clans that the player has been in in the last 24 hours
      */
-    public List<Clan> getLast24HourClans() {
+    public List<AbstractClan> getLast24HourClans() {
         return clanLeaveMap.entrySet().stream()
-                .filter(entry -> System.currentTimeMillis() < entry.getValue() && plugin.getClanPlugin().getClanByUUID(entry.getKey()) != null)
-                .map(entry -> plugin.getClanPlugin().getClanByUUID(entry.getKey())).collect(Collectors.toList());
+                .filter(entry -> System.currentTimeMillis() < entry.getValue() && CLANS.get().getClanByUUID(entry.getKey()) != null)
+                .map(entry -> CLANS.get().getClanByUUID(entry.getKey())).collect(Collectors.toList());
     }
     
     public void add(UUID clanUUID, long currentTime) {
